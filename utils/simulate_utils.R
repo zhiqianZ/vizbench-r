@@ -80,7 +80,7 @@ scdesign3 <- function(args) {
   
   # HVG 
   seurat = CreateSeuratObject(data)
-  seurat = FindVariableFeatures(seurat,nfeatures = 1000) 
+  seurat = FindVariableFeatures(seurat,nfeatures = 2000) 
   # MR: 1000 to make it faster?
   hvg = VariableFeatures(seurat)
   
@@ -99,7 +99,7 @@ scdesign3 <- function(args) {
     spatial = NULL,
     other_covariates = "batch",
     corr_by = "celltype",
-    ncell = 30000
+    ncell = 3000
     #ncell = 100000
   )
   
@@ -113,7 +113,7 @@ scdesign3 <- function(args) {
     mu_formula = "celltype+batch",
     sigma_formula = "celltype",
     family_use = "nb",
-    n_cores = 40,
+    n_cores = 10,
     usebam = FALSE,
     parallelization = "mcmapply",
     # parallelization = "pbmcmapply",
@@ -126,14 +126,14 @@ scdesign3 <- function(args) {
     marginal_list = marginal,
     family_use = "nb",
     copula = "gaussian",
-    n_cores = 40,
+    n_cores = 10,
     input_data = data$dat
   )
   
   para <- extract_para(
     sce = sce,
     marginal_list = marginal,
-    n_cores = 40,
+    n_cores = 10,
     family_use = "nb",
     new_covariate = data$newCovariate,
     parallelization = "mcmapply",
@@ -157,7 +157,7 @@ scdesign3 <- function(args) {
     zero_mat = para$zero_mat,
     quantile_mat = NULL,
     copula_list = copula$copula_list,
-    n_cores = 40,
+    n_cores = 10,
     family_use = "nb",
     input_data = data$dat,
     new_covariate = data$newCovariate,
