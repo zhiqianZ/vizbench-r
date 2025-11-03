@@ -5,7 +5,7 @@ load_pkgs <- function() {
 
 SeuratUMAP = function(args, n.pcs=20, n.cores = 10){
   message("Running SeuratUMAP")
-  message(try(reticulate::use_python("/root/.virtualenvs/r-reticulate/bin/python"))) # hacky
+  #message(try(reticulate::use_python("/root/.virtualenvs/r-reticulate/bin/python"))) # hacky
   z <- reticulate::py_config()
   message(paste0("Using Python: ", z$version_string))
   message(z$version_string)
