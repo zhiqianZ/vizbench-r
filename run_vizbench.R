@@ -35,7 +35,7 @@ parser$add_argument("--flavour",
                     required = TRUE, 
                     help = "Module to run: name depends on the 'what'")
 
-parser$add_argument("--ncell", type = "integer", default = 1000000,
+parser$add_argument("--ncells", type = "integer", default = 1000000,
                     help = "number of cells to simulate")
 
 parser$add_argument("--ngenes", type = "integer", default = 2000,
