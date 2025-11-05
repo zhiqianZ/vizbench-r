@@ -47,7 +47,7 @@ parser$add_argument("--nthreads", type = "integer", default = 10,
 parser$add_argument("--npcs", type = "integer", default = 50,
                     help = "number of pcs used")
 
-parser$add_argument("--nhvg", type = "integer", default = 2000,
+parser$add_argument("--nhvgs", type = "integer", default = 2000,
                     help = "number of hvgs used")
 
 parser$add_argument("--use_simulation", type = "logical", default = TRUE,
