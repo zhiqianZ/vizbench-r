@@ -50,7 +50,7 @@ parser$add_argument("--npcs", type = "integer", default = 50,
 parser$add_argument("--nhvg", type = "integer", default = 2000,
                     help = "number of hvgs used")
 
-parser$add_argument("--is_simulation", type = "logical", default = TRUE,
+parser$add_argument("--use_simulation", type = "logical", default = TRUE,
                     help = "whether used the simulated datasets to benchmark")
 
 parser$add_argument("--verbose", type = "logical", default = TRUE,
@@ -151,6 +151,10 @@ suppressPackageStartupMessages(load_pkgs())
 fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
     x <- fun(args) # execute function 
+    if(args$what == "simulate"){
+      para = x$parameters
+      x = x$obj
+    }
     print(x)
 } else {
     message('Unimplemented functionality. Exiting.\n') # throw error?
@@ -167,7 +171,11 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
 if (args$what == "normalize") {
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
   write(toJSON(list(normalize=args$flavour)), fn)
-} 
+}
+if(args$what == "simulate"){
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.json"))
+  write(toJSON(para), fn)
+}
 if (args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
