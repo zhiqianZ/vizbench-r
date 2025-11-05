@@ -174,7 +174,14 @@ if (args$what == "normalize") {
 }
 if(args$what == "simulate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.json"))
-  write(toJSON(para), fn)
+  para_json <- lapply(para, function(x) {
+    if (is.matrix(x)) {
+      return(as.list(as.data.frame(x)))
+    } else {
+      return(x)
+    }
+  })
+  write(toJSON(para_json), fn)
 }
 if (args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
