@@ -35,6 +35,57 @@ log1pCPM = function(args){
   NormalizeData(seurat.obj, scale.factor= 10^6)
 }
 
+sctransform = function(args){
+  message("Running SCTransform")
+  seurat.obj <- read_seurat(args$simulate.ad)
+  nhvgs = args$nhvgs
+  seurat.obj[["RNA"]] <- split(seurat.obj[["RNA"]], f = seurat.obj$batch)
+  SCTransform(seurat.obj, vst.flavor = "v2", verbose = FALSE, 
+              variable.features.n = nhvgs, method = "glmGamPoi")
+}
+
+# log1pPF = function(args){
+#   message("Running log1pPF")
+#   seurat.obj <- read_seurat(args$simulate.ad)
+#   counts.layer = Layers(object = seurat.obj, search = "counts")
+#   save <- make.unique(names = gsub(
+#     pattern = "counts",
+#     replacement = "data",
+#     x = counts.layer
+#   ))
+#   for (i in seq_along(along.with = counts.layer)) {
+#     l <- counts.layer[i]
+#     LayerData(
+#       object = seurat.obj,
+#       layer = save[i],
+#       features = Features(x = seurat.obj, layer = l),
+#       cells = Cells(x = seurat.obj, layer = l)
+#     ) <- logPF(t(LayerData(object = seurat.obj, layer = l, fast = NA)))
+#   }
+#   return(seurat.obj)
+# }
+# 
+# PFlog1pPF = function(args){
+#   message("Running PFlog1pPF")
+#   seurat.obj <- read_seurat(args$simulate.ad)
+#   counts.layer = Layers(object = seurat.obj, search = "counts")
+#   save <- make.unique(names = gsub(
+#     pattern = "counts",
+#     replacement = "data",
+#     x = counts.layer
+#   ))
+#   for (i in seq_along(along.with = counts.layer)) {
+#     l <- counts.layer[i]
+#     LayerData(
+#       object = seurat.obj,
+#       layer = save[i],
+#       features = Features(x = seurat.obj, layer = l),
+#       cells = Cells(x = seurat.obj, layer = l)
+#     ) <- PFlogPF(t(LayerData(object = seurat.obj, layer = l, fast = NA)))
+#   }
+#   return(seurat.obj)
+# }
+
 # TODO: rewrite this in native Python
 # `log1pCPMedian` = function(seurat.obj){
 #   print("Running Scanpy default normalization")
@@ -58,55 +109,6 @@ log1pCPM = function(args){
 #   }
 #   return(seurat.obj)
 # }
-
-# TODO rework these
-sctransform = function(seurat.obj){
-  print("Running sctransform")
-  seurat.obj = SCTransform(seurat.obj, vst.flavor = "v2", verbose = FALSE, 
-                           variable.features.n = nrow(seurat.obj), method = "glmGamPoi",min_cells=0)
-  return(seurat.obj)
-}
-
-log1pPF = function(seurat.obj){
-  print("Running log1pPF")
-  counts.layer = Layers(object = seurat.obj, search = "counts")
-  save <- make.unique(names = gsub(
-    pattern = "counts",
-    replacement = "data",
-    x = counts.layer
-  ))
-  for (i in seq_along(along.with = counts.layer)) {
-    l <- counts.layer[i]
-    LayerData(
-      object = seurat.obj,
-      layer = save[i],
-      features = Features(x = seurat.obj, layer = l),
-      cells = Cells(x = seurat.obj, layer = l)
-    ) <- logPF(t(LayerData(object = seurat.obj, layer = l, fast = NA)))
-  }
-  return(seurat.obj)
-}
-
-PFlog1pPF = function(seurat.obj){
-  print("Running PFlog1pPF")
-  counts.layer = Layers(object = seurat.obj, search = "counts")
-  save <- make.unique(names = gsub(
-    pattern = "counts",
-    replacement = "data",
-    x = counts.layer
-  ))
-  for (i in seq_along(along.with = counts.layer)) {
-    l <- counts.layer[i]
-    LayerData(
-      object = seurat.obj,
-      layer = save[i],
-      features = Features(x = seurat.obj, layer = l),
-      cells = Cells(x = seurat.obj, layer = l)
-    ) <- PFlogPF(t(LayerData(object = seurat.obj, layer = l, fast = NA)))
-  }
-  return(seurat.obj)
-}
-
 
 
 
