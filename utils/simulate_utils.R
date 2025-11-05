@@ -154,6 +154,6 @@ scdesign3 <- function(args) {
   })
 
 						
-  return(list(seurat.obj, parameters))
+  return(list(obj=seurat.obj, parameters=parameters))
 }
 
