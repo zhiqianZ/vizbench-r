@@ -10,6 +10,7 @@
 ##    Rscript thisfilename.R --what type --flavour specific-module
 
 library(argparse)
+library(reticulate)
 
 parser <- ArgumentParser(description = "Benchmarking entrypoint")
 
@@ -34,8 +35,23 @@ parser$add_argument("--flavour",
                     required = TRUE, 
                     help = "Module to run: name depends on the 'what'")
 
-parser$add_argument("--params", type = "character", default = "",
-                    help = "Optional parameters as free-form text")
+parser$add_argument("--ncell", type = "integer", default = 1000000,
+                    help = "number of cells to simulate")
+
+parser$add_argument("--ngenes", type = "integer", default = 2000,
+                    help = "number of genes to simulate")
+
+parser$add_argument("--nthreads", type = "integer", default = 10,
+                    help = "numer of threads used for simulating and benchmarking methods")
+
+parser$add_argument("--npcs", type = "integer", default = 50,
+                    help = "number of pcs used")
+
+parser$add_argument("--nhvg", type = "integer", default = 2000,
+                    help = "number of hvgs used")
+
+parser$add_argument("--is_simulation", type = "logical", default = TRUE,
+                    help = "whether used the simulated datasets to benchmark")
 
 parser$add_argument("--verbose", type = "logical", default = TRUE,
                     help = "TRUE/FALSE as to whether to write progress to stdout")
@@ -103,6 +119,18 @@ if( file.exists(helpers) ) {
 } else {
   message(paste0("Helper code in ",helpers," not found. Exiting."))
   quit("no", status = 1)
+}
+
+# source normalization python helper functions
+if (args$what == "normalize") {
+  helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.py"))
+  if( file.exists(helpers) ) {
+    message("Sourcing .. ", helpers)
+    source_python(helpers)
+  } else {
+    message(paste0("Helper code in ",helpers," not found. Exiting."))
+    quit("no", status = 1)
+  }
 }
 
 # source stage-specific helper functions (n.b.: according to args$what)
