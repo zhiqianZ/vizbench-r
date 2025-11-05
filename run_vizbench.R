@@ -87,6 +87,10 @@ parser$add_argument('--visualize.csv.gz',
                     type="character",
                     help='gz-compressed CSV file containing embeddings')
 
+parser$add_argument('--py_path', 
+                    type="character",
+                    default="/usr/bin/python3",
+                    help='the path of the Python for the reticulate package to use')
 
 # parser$add_argument('--data.true_labels',
 #                     type="character",
@@ -120,6 +124,8 @@ if( file.exists(helpers) ) {
   message(paste0("Helper code in ",helpers," not found. Exiting."))
   quit("no", status = 1)
 }
+
+use_python(args$py_path)
 
 # source normalization python helper functions
 if (args$what == "normalize") {
