@@ -181,6 +181,7 @@ if(args$what == "simulate"){
       return(x)
     }
   })
+  print(sapply(para_json, typeof))
   write(toJSON(para_json), fn)
 }
 if (args$what == "visualize") {
