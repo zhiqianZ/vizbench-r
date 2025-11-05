@@ -153,7 +153,7 @@ scdesign3 <- function(args) {
     var_mat
   })
 
-						
+  parameters$labels <- coldat			
   return(list(obj=seurat.obj, parameters=parameters))
 }
 
