@@ -173,16 +173,8 @@ if (args$what == "normalize") {
   write(toJSON(list(normalize=args$flavour)), fn)
 }
 if(args$what == "simulate"){
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.json"))
-  para_json <- lapply(para, function(x) {
-    if (is.matrix(x)) {
-      return(as.list(as.data.frame(x)))
-    } else {
-      return(x)
-    }
-  })
-  print(sapply(para_json, typeof))
-  write(toJSON(para_json), fn)
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
+  saveRDS(para, fn)
 }
 if (args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
