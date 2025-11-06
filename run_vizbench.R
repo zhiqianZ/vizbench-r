@@ -177,7 +177,7 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
     if(args$verbose) message(paste0("Writing: ", fn, "."))
     message(typeof(x))
     x
-    x[["write"]](fn, compression = "gzip")
+    #x[["write"]](fn, compression = "gzip")
     message("done")
   }
 } 
