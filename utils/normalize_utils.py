@@ -5,7 +5,8 @@ import scipy as sp
 
 def log1pCPMedian(args):
     print("Running log1pCPMedian")
-
+    print("Type:", type(args))
+    print("Dir:", dir(args))
     adata_path = args["simulate_ad"]
     adata = sc.read_h5ad(adata_path)
 
