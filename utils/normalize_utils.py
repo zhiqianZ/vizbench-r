@@ -90,8 +90,8 @@ def norm_pf_log_pf(mtx):
    
 def logPF(counts):
   norm = norm_log_pf(sp.sparse.csr_matrix(counts))
-  return norm.T
+  return norm
  
 def PFlogPF(counts):
   norm = norm_pf_log_pf(sp.sparse.csr_matrix(counts))
-  return norm.T
+  return norm
