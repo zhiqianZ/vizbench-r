@@ -171,7 +171,15 @@ if ( !("error" %in% class(fun)) ) {
 if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
   # here, always writing data files as AD (HDF5)
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
-  write_ad(x, fn)
+  if(typeof(x)!="environment"){
+    write_seurat_ad(x, fn)
+  }else{
+    if(verbose) message(paste0("Writing: ", file, "."))
+    x$write(
+    fn,
+    compression='gzip'
+    )
+  }
 } 
 # write memento about normalization method
 if (args$what == "normalize") {
