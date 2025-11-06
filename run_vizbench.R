@@ -175,7 +175,7 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
     write_seurat_ad(x, fn)
   }else{
     if(args$verbose) message(paste0("Writing: ", fn, "."))
-    py_get_attr(x, "write")(fn, compression = "gzip")
+    x$adata$write(fn, compression = "gzip")
     message("done")
   }
 } 
