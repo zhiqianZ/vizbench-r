@@ -5,19 +5,17 @@ import scipy as sp
 
 def log1pCPMedian(args):
     print("Running log1pCPMedian")
-    print("Type:", type(args))
-    print("Dir:", dir(args))
-    #adata_path = args["simulate_ad"]
-    #adata = sc.read_h5ad(adata_path)
+    adata_path = args["simulate.ad"]
+    adata = sc.read_h5ad(adata_path)
 
-    #X_norm = np.zeros_like(adata.X, dtype=np.float32)
-    #for batch in adata.obs['batch'].unique():
-    #    batch_idx = adata.obs['batch'] == batch
-    #    sub = adata[batch_idx].copy()
-    #    sc.pp.normalize_total(sub, target_sum=None, inplace=True)
-    #    sc.pp.log1p(sub)
-    #    X_norm[batch_idx, :] = sub.X
-    #adata.layers["data"] = X_norm
+    X_norm = np.zeros_like(adata.X, dtype=np.float32)
+    for batch in adata.obs['batch'].unique():
+        batch_idx = adata.obs['batch'] == batch
+        sub = adata[batch_idx].copy()
+        sc.pp.normalize_total(sub, target_sum=None, inplace=True)
+        sc.pp.log1p(sub)
+        X_norm[batch_idx, :] = sub.X
+    adata.layers["data"] = X_norm
   
     return dir(args)
 
@@ -25,7 +23,7 @@ def log1pCPMedian(args):
 def log1pPF(args):
     print("Running log1pPF")
 
-    adata_path = args["simulate_ad"]
+    adata_path = args["simulate.ad"]
     adata = sc.read_h5ad(adata_path)
 
     X_norm = np.zeros_like(adata.X, dtype=np.float32)
@@ -45,7 +43,7 @@ def log1pPF(args):
 def PFlog1pPF(args):
     print("Running PFlog1pPF")
 
-    adata_path = args["simulate_ad"]
+    adata_path = args["simulate.ad"]
     adata = sc.read_h5ad(adata_path)
 
     X_norm = np.zeros_like(adata.X, dtype=np.float32)
