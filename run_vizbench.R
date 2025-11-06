@@ -156,7 +156,7 @@ suppressPackageStartupMessages(load_pkgs())
 # n.b.: args$flavour defines what 'main' function to call
 fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
-    x <- fun(args) # execute function 
+    x <- fun(as.list(args)) # execute function 
     if(args$what == "simulate"){
       para = x$parameters
       x = x$obj
