@@ -10,206 +10,165 @@ load_pkgs <- function() {
   library(rjson)
 }
 
-find_hvgs <- function(seurat.obj, s, nfeatures = 2000) {
-  seurat.obj <- seurat.obj[,s]
+find_hvgs_seuratv5 <- function(seurat.obj, nfeatures = 2000) {
   seurat.obj <- FindVariableFeatures(seurat.obj,
                                      selection.method = "vst", 
                                      nfeatures = nfeatures)
   VariableFeatures(seurat.obj)
 }
 
-harmony = function(args, npcs = 20, nfeatures = 2000) {
-  # parameters 'npcs' and 'nfeatures' are implemented here,
-  # but so far not in the orchestrator
+harmony = function(args) {
   message("Running Harmony")
-  # norm_method <- read_normmethod(args$normalize.json)
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
   so <- read_seurat(args$normalize.ad)
-  
-  rns <- split(row.names(so@meta.data), so@meta.data$batch)
-  hvgs <- lapply(rns, function(u) find_hvgs(so, u, nfeatures = nfeatures))
-  VariableFeatures(so) <- unique( unlist(hvgs) )
-  
-  so <- ScaleData(so)
+  if(norm_method != "sctransform"){
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    hvgs <- find_hvgs_seuratv5(so, nhvgs)
+    VariableFeatures(so) <- hvgs
+    so <- ScaleData(so) 
+  }
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
-  
   RunHarmony(so, "batch", reduction.save = "integrated")
 }
 
+`Seurat-RPCA` = function(args){
+  message("Running Seurat RPCA")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  if(norm_method != "sctransform"){
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    hvgs <- find_hvgs_seuratv5(so, nhvgs)
+    VariableFeatures(so) <- hvgs
+    so = IntegrateLayers(
+       object = so, method = RPCAIntegration,
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+     ) 
+  }else{
+    so = IntegrateLayers(
+       object = so, method = RPCAIntegration,
+       normalization.method = "SCT",
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+    )
+  }
+  return(so)
+}
 
-# need to make sure this overall logic is reflected in the implemented methods below
-# Integration = function(seurat.obj, IntegrateMethod, n.pcs = 50, features=rownames(seurat.obj), is.sctransform=FALSE){
-#   # if(!(identical(IntegrateMethod, scVI) | identical(IntegrateMethod, LIGERv2) | identical(IntegrateMethod, FastMNN))){
-#   if(!identical(IntegrateMethod, FastMNN)){
-#     if(!is.sctransform){
-#       seurat.obj = FindVariableFeatures(seurat.obj, nfeatures = nrow(seurat.obj))
-#       seurat.obj <- ScaleData(seurat.obj) 
-#     }
-#     seurat.obj <- RunPCA(seurat.obj, npcs = n.pcs)
-#     seurat.obj = IntegrateMethod(seurat.obj, is.sctransform, n.pcs, features)
-#   }else{
-#     seurat.obj = IntegrateMethod(seurat.obj, is.sctransform, n.pcs, features)
-#   }
-#   return(seurat.obj)
-# }
-
-# Harmony = function(seurat.obj, is.sctransform, n.pcs, features){
-#   print("Running Harmony")
-#   if(!is.sctransform){
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = HarmonyIntegration,
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       npcs = n.pcs,
-#       features = features
-#     ) 
-#   }else{
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = HarmonyIntegration,
-#       normalization.method = "SCT",
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       npcs = n.pcs,
-#       features = features
-#     ) 
-#   }
-#   return(seurat.obj)
-# }
-
-
-# harmony = function(args) {
-#   # is.sctransform, n.pcs, features
-#   print("Running Harmony")
-#   norm_method <- read_normmethod(args$normalize.json)
-#   seurat.obj <- read_seurat(args$normalize.ad)
-#   # TODO: need to expose these params below to benchmarker
-#   features <- rownames(seurat.obj)
-#   n.pcs <- 50
-#   if(!(norm_method=="sctransform")){
-#     seurat.obj = FindVariableFeatures(seurat.obj, nfeatures = nrow(seurat.obj))
-#     seurat.obj <- ScaleData(seurat.obj)
-#     seurat.obj <- RunPCA(seurat.obj, npcs = n.pcs)
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = HarmonyIntegration,
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       npcs = n.pcs,
-#       features = features
-#     )
-#   }else{
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = HarmonyIntegration,
-#       normalization.method = "SCT",
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       npcs = n.pcs,
-#       features = features
-#     )
-#   }
-#   return(seurat.obj)
-# }
-
-
-# `Seurat-RPCA` = function(seurat.obj, is.sctransform, n.pcs, features){
-#   print("Running Seurat RPCA")
-#   if(!is.sctransform){
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = RPCAIntegration,
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       dims = 1:n.pcs,
-#       features = features
-#     ) 
-#   }else{
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = RPCAIntegration,
-#       normalization.method = "SCT",
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = TRUE,
-#       dims = 1:n.pcs,
-#       features = features
-#     )
-#   }
-#   return(seurat.obj)
-# }
+`Seurat-CCA` = function(args){
+  message("Running Seurat CCA")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  if(norm_method != "sctransform"){
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    hvgs <- find_hvgs_seuratv5(so, nhvgs)
+    VariableFeatures(so) <- hvgs
+    so = IntegrateLayers(
+       object = so, method = CCAIntegration,
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+     ) 
+  }else{
+    so = IntegrateLayers(
+       object = so, method = CCAIntegration,
+       normalization.method = "SCT",
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+      )
+  }
+  return(so)
+}
 
 fastMNN = function(args) {
-  print("Running Fast MNN")
-  norm_method <- read_normmethod(args)
-  seurat.obj <- read_seurat(args)
-  # TODO: need to expose these params below to benchmarker
-  features <- rownames(seurat.obj)
-  n.pcs <- 50
-  if(!(norm_method=="sctransform")){
-    seurat.obj = FindVariableFeatures(seurat.obj, nfeatures = nrow(seurat.obj))
-    seurat.obj <- ScaleData(seurat.obj)
-    seurat.obj <- RunPCA(seurat.obj, npcs = n.pcs)
-    seurat.obj = IntegrateLayers(object = seurat.obj, method = FastMNNIntegration,
+  message("Running FastMNN")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  if(norm_method != "sctransform"){
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    hvgs <- find_hvgs_seuratv5(so, nhvgs)
+    VariableFeatures(so) <- hvgs
+    so <- ScaleData(so)
+    so <- RunPCA(so, npcs = npcs)
+    so = IntegrateLayers(object = so, method = FastMNNIntegration,
                                  new.reduction = 'integrated', verbose = TRUE, 
                                  orig.reduction = NULL,
-                                 features = features,
-                                 assay.type = "logcounts") #batch = seurat.obj$batch)
+                                 features = VariableFeatures(so),
+                                 assay.type = "logcounts")
   }else{
-    seurat.obj = IntegrateLayers(
-      object = seurat.obj, method = FastMNNIntegration,
-      new.reduction = "integrated",orig.reduction = NULL,
+    so = IntegrateLayers(
+      object = so, method = FastMNNIntegration,
+      new.reduction = "integrated", orig.reduction = NULL,
       verbose = TRUE,
-      batch = seurat.obj$batch,
-      features = features,
+      batch = so$batch,
+      features = VariableFeatures(so),
       assay = "SCT",
       assay.type = "scaledata"
     )
   }
-  return(seurat.obj)
+  return(so)
 }
 
-# `Seurat-CCA` = function(seurat.obj, is.sctransform, n.pcs, features){
-#   print("Running Seurat CCA")
-#   if(!is.sctransform){
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = CCAIntegration,
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = T,
-#       dims = 1:n.pcs,
-#       features = features
-#     ) 
-#   }else{
-#     seurat.obj = IntegrateLayers(
-#       object = seurat.obj, method = CCAIntegration,
-#       normalization.method = "SCT",
-#       orig.reduction = "pca", new.reduction = "integrated",
-#       verbose = T,
-#       dims = 1:n.pcs,
-#       features = features
-#     )
-#   }
-# }
+LIGER = function(args){
+  message("Running LIGER")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  
+  so <- so %>%
+     normalize() %>%
+     selectGenes(nGenes = nhvgs) %>%
+     scaleNotCenter()
+   so <- so %>%
+     runINMF(k = npcs) %>%
+     quantileNorm()
+   so[["integrated"]] = so[["inmfNorm"]]
+  
+   return(so)
+}
 
-# scVI = function(seurat.obj, is.sctransform, n.pcs, features){
-#   print("Running scVI")
-#   seurat.obj = IntegrateLayers(
-#     object = seurat.obj,
-#     method = scVIIntegration,
-#     new.reduction = "integrated",
-#     conda_env = "Benchmark",
-#     verbose = T,
-#     features = features,
-#     ndims = n.pcs,
-#     layers = "counts",
-#     orig.reduction = NULL,
-#     scale.layer = NULL,
-#     assay = "RNA"
-#   ) 
-#   return(seurat.obj)
-# }
 
-# LIGERv2 = function(seurat.obj, is.sctransform, n.pcs, features){
-#   seurat.obj <- seurat.obj %>%
-#     normalize() %>%
-#     selectGenes(nGenes = nrow(seurat.obj)) %>%
-#     scaleNotCenter()
-#   seurat.obj <- seurat.obj %>%
-#     runINMF(k = n.pcs) %>%
-#     quantileNorm()
-#   seurat.obj[["integrated"]] = seurat.obj[["inmfNorm"]]
-#   return(seurat.obj)
-# }
+scVI = function(args){
+  message("Running scVI")
+  message("Running scVI")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  
+  so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+  hvgs <- find_hvgs_seuratv5(so, nhvgs)
+  
+  so <- IntegrateLayers(
+    so,
+    method = scVIIntegration,
+    new.reduction = "integrated",
+    #conda_env = "Benchmark",
+    verbose = T,
+    features = hvgs,
+    ndims = npcs,
+    layers = "counts",
+    orig.reduction = NULL,
+    scale.layer = NULL,
+    assay = "RNA"
+  )
+  
+  return(so)
+}
+
