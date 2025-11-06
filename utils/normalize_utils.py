@@ -41,8 +41,8 @@ def log1pPF(args):
 
     return adata
 
-def log1pPF(args):
-    print("Running log1pPF")
+def PFlog1pPF(args):
+    print("Running PFlog1pPF")
 
     adata_path = args.simulate_ad
     adata = sc.read_h5ad(adata_path)
