@@ -161,7 +161,7 @@ if ( !("error" %in% class(fun)) ) {
       para = x$parameters
       x = x$obj
     }
-    print(x)
+  message("done running")
 } else {
     message('Unimplemented functionality. Exiting.\n') # throw error?
     quit("no", status = 1)
