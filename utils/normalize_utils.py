@@ -7,17 +7,24 @@ def log1pCPMedian(args):
     print("Running log1pCPMedian")
     adata_path = args["simulate.ad"]
     adata = sc.read_h5ad(adata_path)
-
-    X_norm = np.zeros_like(adata.X, dtype=np.float32)
-    for batch in adata.obs['batch'].unique():
-        batch_idx = adata.obs['batch'] == batch
-        sub = adata[batch_idx].copy()
-        sc.pp.normalize_total(sub, target_sum=None, inplace=True)
+    
+    X_data = sp.sparse.lil_matrix(adata.shape, dtype=np.float32)
+    # Batch-wise normalization
+    for batch in adata.obs["batch"].unique():
+        print(f"Normalizing batch: {batch}")
+        batch_idx = adata.obs["batch"] == batch
+        idx = np.where(batch_idx)[0]
+        # Create lightweight AnnData for transformation
+        sub = sc.AnnData(X=adata.layers['counts'][idx, :])
+        sc.pp.normalize_total(sub, target_sum=1e4, inplace=True)
         sc.pp.log1p(sub)
-        X_norm[batch_idx, :] = sub.X
-    adata.layers["data"] = X_norm
-  
-    return dir(args)
+        for i, orig_idx in enumerate(idx):
+            X_data[orig_idx, :] = sub.X[i, :]
+    
+    # Store in compressed format
+    adata.layers["data"] = X_data.tocsr()
+    
+    return adata
 
 
 def log1pPF(args):
@@ -26,17 +33,18 @@ def log1pPF(args):
     adata_path = args["simulate.ad"]
     adata = sc.read_h5ad(adata_path)
 
-    X_norm = np.zeros_like(adata.X, dtype=np.float32)
+    n_cells, n_genes = adata.shape
+    X_data = np.zeros((n_cells, n_genes), dtype=np.float32)
 
-    for batch in adata.obs['batch'].unique():
-        batch_idx = adata.obs['batch'] == batch
-        sub = adata[batch_idx].copy()
+    for batch in adata.obs["batch"].unique():
+        print(f"Normalizing batch: {batch}")
+        batch_mask = adata.obs["batch"] == batch
+        idx = np.where(batch_mask)[0]
 
-        X_batch = sub.X.toarray() if sp.issparse(sub.X) else sub.X
-        X_norm_batch = logPF(X_batch)
-        X_norm[batch_idx, :] = X_norm_batch
-
-    adata.layers["data"] = X_norm
+        # Subset just counts layer and normalize
+        X_data[idx, :] = logPF(adata.layers["counts"][idx, :]).toarray()
+        
+    adata.layers["data"] = sp.sparse.csr_matrix(X_data)
 
     return adata
 
@@ -46,17 +54,18 @@ def PFlog1pPF(args):
     adata_path = args["simulate.ad"]
     adata = sc.read_h5ad(adata_path)
 
-    X_norm = np.zeros_like(adata.X, dtype=np.float32)
+    n_cells, n_genes = adata.shape
+    X_data = np.zeros((n_cells, n_genes), dtype=np.float32)
 
-    for batch in adata.obs['batch'].unique():
-        batch_idx = adata.obs['batch'] == batch
-        sub = adata[batch_idx].copy()
+    for batch in adata.obs["batch"].unique():
+        print(f"Normalizing batch: {batch}")
+        batch_mask = adata.obs["batch"] == batch
+        idx = np.where(batch_mask)[0]
 
-        X_batch = sub.X.toarray() if sp.issparse(sub.X) else sub.X
-        X_norm_batch = PFlogPF(X_batch)
-        X_norm[batch_idx, :] = X_norm_batch
-
-    adata.layers["data"] = X_norm
+        # Subset just counts layer and normalize
+        X_data[idx, :] = PFlogPF(adata.layers["counts"][idx, :]).toarray()
+        
+    adata.layers["data"] = sp.sparse.csr_matrix(X_data)
 
     return adata
     
