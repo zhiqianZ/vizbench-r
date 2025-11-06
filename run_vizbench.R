@@ -132,7 +132,7 @@ if (args$what == "normalize") {
   helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.py"))
   if( file.exists(helpers) ) {
     message("Sourcing .. ", helpers)
-    source_python(helpers)
+    source_python(helpers, convert = FALSE)
   } else {
     message(paste0("Helper code in ",helpers," not found. Exiting."))
     quit("no", status = 1)
