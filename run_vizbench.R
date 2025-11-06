@@ -174,7 +174,7 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
   if(typeof(x)!="environment"){
     write_seurat_ad(x, fn)
   }else{
-    if(args$verbose) message(paste0("Writing: ", file, "."))
+    if(args$verbose) message(paste0("Writing: ", fn, "."))
     x$write(
     fn,
     compression='gzip'
