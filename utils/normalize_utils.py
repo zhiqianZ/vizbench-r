@@ -6,7 +6,7 @@ import scipy as sp
 def log1pCPMedian(args):
     print("Running log1pCPMedian")
 
-    adata_path = args['simulate_ad'] if isinstance(args, dict) else args.simulate_ad
+    adata_path = args.simulate_ad
     adata = sc.read_h5ad(adata_path)
 
     X_norm = np.zeros_like(adata.X, dtype=np.float32)
@@ -24,7 +24,7 @@ def log1pCPMedian(args):
 def log1pPF(args):
     print("Running log1pPF")
 
-    adata_path = args['simulate_ad'] if isinstance(args, dict) else args.simulate_ad
+    adata_path = args.simulate_ad
     adata = sc.read_h5ad(adata_path)
 
     X_norm = np.zeros_like(adata.X, dtype=np.float32)
@@ -44,7 +44,7 @@ def log1pPF(args):
 def log1pPF(args):
     print("Running log1pPF")
 
-    adata_path = args['simulate_ad'] if isinstance(args, dict) else args.simulate_ad
+    adata_path = args.simulate_ad
     adata = sc.read_h5ad(adata_path)
 
     X_norm = np.zeros_like(adata.X, dtype=np.float32)
