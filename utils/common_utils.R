@@ -10,7 +10,9 @@ read_seurat <- function(f) read_h5ad(f, as = "Seurat")
 
 write_ad <- function(x, file, verbose = TRUE) {
   if(verbose) message(paste("Converting", class(x), "-> AnnData."))
-  x.ad <- as_AnnData(x)
+  if(typeof(x)!="environment"){
+    x.ad <- as_AnnData(x)
+  }
   if(verbose) message(paste0("Writing: ", file, "."))
   write_h5ad(x.ad, fn, mode = "w", compression = "gzip")
   if(verbose) message("Done.")
