@@ -138,6 +138,9 @@ if (args$what == "normalize") {
     quit("no", status = 1)
   }
 }
+if(args$flavour == "FItSNE"){
+  source("/FItSNE/fast_tsne.R",chdir=T)
+}
 
 # source stage-specific helper functions (n.b.: according to args$what)
 helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.R"))
