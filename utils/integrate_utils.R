@@ -30,7 +30,9 @@ harmony = function(args) {
     so <- ScaleData(so) 
   }
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
-  RunHarmony(so, "batch", reduction.save = "integrated")
+  so <- RunHarmony(so, "batch", reduction.save = "integrated")
+  so <- JoinLayers(so)
+  return(so)
 }
 
 SeuratRPCA = function(args){
@@ -43,6 +45,7 @@ SeuratRPCA = function(args){
     so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     hvgs <- find_hvgs_seuratv5(so, nhvgs)
     VariableFeatures(so) <- hvgs
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = RPCAIntegration,
        orig.reduction = "pca", new.reduction = "integrated",
@@ -51,6 +54,7 @@ SeuratRPCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = RPCAIntegration,
        normalization.method = "SCT",
@@ -60,6 +64,7 @@ SeuratRPCA = function(args){
        features = VariableFeatures(so)
     )
   }
+  so <- JoinLayers(so)
   return(so)
 }
 
@@ -73,6 +78,7 @@ SeuratCCA = function(args){
     so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     hvgs <- find_hvgs_seuratv5(so, nhvgs)
     VariableFeatures(so) <- hvgs
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = CCAIntegration,
        orig.reduction = "pca", new.reduction = "integrated",
@@ -81,6 +87,7 @@ SeuratCCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = CCAIntegration,
        normalization.method = "SCT",
@@ -90,6 +97,7 @@ SeuratCCA = function(args){
        features = VariableFeatures(so)
       )
   }
+  so <- JoinLayers(so)
   return(so)
 }
 
@@ -121,6 +129,7 @@ fastMNN = function(args) {
       assay.type = "scaledata"
     )
   }
+  so <- JoinLayers(so)
   return(so)
 }
 
@@ -139,7 +148,7 @@ LIGER = function(args){
      runINMF(k = npcs) %>%
      quantileNorm()
    so[["integrated"]] = so[["inmfNorm"]]
-  
+   so <- JoinLayers(so)
    return(so)
 }
 
@@ -168,7 +177,7 @@ scVI = function(args){
     scale.layer = NULL,
     assay = "RNA"
   )
-  
+  so <- JoinLayers(so)
   return(so)
 }
 
