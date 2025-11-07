@@ -26,11 +26,11 @@ parser$add_argument("--what",
 # TODO: add subparser?
 
 parser$add_argument("--flavour", 
-                    choices = c("mouse_pancreas",                         # raw data
-                                "scdesign3",                              # simulate
-                                "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF","log1pCPMedian",  # normalize
-                                "harmony", "fastMNN",                     # integrate
-                                "SeuratUMAP",                             # visualize
+                    choices = c("mouse_pancreas",                                                                         # raw data
+                                "scdesign3",                                                                              # simulate
+                                "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian",         # normalize
+                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                         # integrate
+                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA",  # visualize
                                 "celltype_shape","batch_mixture"),        # metrics
                     required = TRUE, 
                     help = "Module to run: name depends on the 'what'")
