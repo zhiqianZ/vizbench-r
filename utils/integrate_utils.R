@@ -33,7 +33,7 @@ harmony = function(args) {
   RunHarmony(so, "batch", reduction.save = "integrated")
 }
 
-`Seurat-RPCA` = function(args){
+SeuratRPCA = function(args){
   message("Running Seurat RPCA")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
@@ -63,7 +63,7 @@ harmony = function(args) {
   return(so)
 }
 
-`Seurat-CCA` = function(args){
+SeuratCCA = function(args){
   message("Running Seurat CCA")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
