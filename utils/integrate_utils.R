@@ -45,6 +45,7 @@ SeuratRPCA = function(args){
     so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     hvgs <- find_hvgs_seuratv5(so, nhvgs)
     VariableFeatures(so) <- hvgs
+    so <- ScaleData(so)
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = RPCAIntegration,
@@ -78,6 +79,7 @@ SeuratCCA = function(args){
     so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     hvgs <- find_hvgs_seuratv5(so, nhvgs)
     VariableFeatures(so) <- hvgs
+    so <- ScaleData(so)
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = CCAIntegration,
