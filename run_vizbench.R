@@ -79,6 +79,10 @@ parser$add_argument('--normalize.json',
                     type="character",
                     help='JSON file containing name of normalization method')
 
+parser$add_argument('--sct.hvgs.json',
+                    type="character",
+                    help='JSON file containing highly variable genes for SCTransform')
+
 parser$add_argument('--integrate.ad',
                     type="character",
                     help='gz-compressed H5 file containing (integrated) data as AnnData')
@@ -191,6 +195,10 @@ if (args$what == "normalize") {
     fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_hvg.json"))
     write(toJSON(list(hvgs = VariableFeatures(x))), fn)
   }
+}
+if(args$what == "integrate"){
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_hvg.json"))
+  write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
 if(args$what == "simulate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
