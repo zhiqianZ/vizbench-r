@@ -139,7 +139,7 @@ if (args$what == "normalize") {
   }
 }
 if(args$flavour == "FItSNE"){
-  source("/FItSNE/fast_tsne.R",chdir=T)
+  source("/FIt-SNE/fast_tsne.R",chdir=T)
 }
 
 # source stage-specific helper functions (n.b.: according to args$what)
