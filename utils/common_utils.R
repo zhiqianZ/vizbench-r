@@ -17,3 +17,6 @@ write_seurat_ad <- function(x, file, verbose = TRUE) {
 
 read_normmethod <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$normalize
+
+read_hvgs <- function(f) fromJSON(paste(readLines(f), 
+                                              collapse=""))$hvgs
