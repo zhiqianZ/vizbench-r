@@ -6,7 +6,14 @@ SeuratUMAP = function(args){
   message("Running SeuratUMAP")
   npcs <- args$npcs
   nthreads <- args$nthreads
-  so <- read_seurat(args$integrate.ad)
+  message(args$integrate_raw.ad)
+  message(args$integrate_norm.ad)
+  if(is.null(args$integrate_norm.ad)){
+    fn = args$integrate_raw.ad
+  }else{
+    fn = args$integrate_norm.ad
+  }
+  so <- read_seurat(fn)
   so = RunUMAP(so, dims = 1:npcs, 
                        reduction="integrated",
                        n_threads = nthreads)
@@ -15,7 +22,14 @@ SeuratUMAP = function(args){
 
 BHtSNE = function(args){
   message("Running BH-tSNE")
-  so <- read_seurat(args$integrate.ad)
+  message(args$integrate_raw.ad)
+  message(args$integrate_norm.ad)
+  if(is.null(args$integrate_norm.ad)){
+    fn = args$integrate_raw.ad
+  }else{
+    fn = args$integrate_norm.ad
+  }
+  so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
   so = RunTSNE(so, dims = 1:npcs, reduction="integrated", 
@@ -26,7 +40,14 @@ BHtSNE = function(args){
 
 densMAP = function(args){
   message("Running densMAP")
-  so <- read_seurat(args$integrate.ad)
+  message(args$integrate_raw.ad)
+  message(args$integrate_norm.ad)
+  if(is.null(args$integrate_norm.ad)){
+    fn = args$integrate_raw.ad
+  }else{
+    fn = args$integrate_norm.ad
+  }
+  so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
   so = RunUMAP(so, umap.method = "umap-learn", 
@@ -38,7 +59,14 @@ densMAP = function(args){
 
 FItSNE =  function(args){
   message("Running FIt-SNE")
-  so <- read_seurat(args$integrate.ad)
+  message(args$integrate_raw.ad)
+  message(args$integrate_norm.ad)
+  if(is.null(args$integrate_norm.ad)){
+    fn = args$integrate_raw.ad
+  }else{
+    fn = args$integrate_norm.ad
+  }
+  so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
   latent = so@reductions$integrated@cell.embeddings[,1:npcs]
