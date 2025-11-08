@@ -79,7 +79,7 @@ parser$add_argument('--normalize.json',
                     type="character",
                     help='JSON file containing name of normalization method')
 
-parser$add_argument('--sct.hvgs.json',
+parser$add_argument('--sct_hvgs.json',
                     type="character",
                     help='JSON file containing highly variable genes for SCTransform')
 
@@ -191,10 +191,8 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
 if (args$what == "normalize") {
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
   write(toJSON(list(normalize=args$flavour)), fn)
-  if(args$flavour == "sctransform"){
-    fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_hvg.json"))
-    write(toJSON(list(hvgs = VariableFeatures(x))), fn)
-  }
+  fn <- file.path(args$output_dir, paste0(args$name,"_sct_hvgs.json"))
+  write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
 if(args$what == "integrate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_hvg.json"))
