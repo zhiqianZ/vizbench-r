@@ -28,6 +28,9 @@ harmony = function(args) {
     hvgs <- find_hvgs_seuratv5(so, nhvgs)
     VariableFeatures(so) <- hvgs
     so <- ScaleData(so) 
+  }else{
+    hvgs <- read_hvgs(args$sct.hvgs.json)
+    VariableFeatures(so) <- hvgs
   }
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
   so <- RunHarmony(so, "batch", reduction.save = "integrated")
@@ -55,10 +58,11 @@ SeuratRPCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
+    hvgs <- read_hvgs(args$sct.hvgs.json)
+    VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = RPCAIntegration,
-       normalization.method = "SCT",
        orig.reduction = "pca", new.reduction = "integrated",
        verbose = TRUE,
        dims = 1:npcs,
@@ -89,15 +93,16 @@ SeuratCCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
+    hvgs <- read_hvgs(args$sct.hvgs.json)
+    VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
        object = so, method = CCAIntegration,
-       normalization.method = "SCT",
        orig.reduction = "pca", new.reduction = "integrated",
        verbose = TRUE,
        dims = 1:npcs,
        features = VariableFeatures(so)
-      )
+    )
   }
   so <- JoinLayers(so)
   return(so)
@@ -121,13 +126,14 @@ fastMNN = function(args) {
                                  features = VariableFeatures(so),
                                  assay.type = "logcounts")
   }else{
+    hvgs <- read_hvgs(args$sct.hvgs.json)
+    VariableFeatures(so) <- hvgs
     so = IntegrateLayers(
       object = so, method = FastMNNIntegration,
       new.reduction = "integrated", orig.reduction = NULL,
       verbose = TRUE,
       batch = so$batch,
       features = VariableFeatures(so),
-      assay = "SCT",
       assay.type = "scaledata"
     )
   }
