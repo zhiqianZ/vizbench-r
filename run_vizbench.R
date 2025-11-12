@@ -91,9 +91,9 @@ parser$add_argument('--normalize.json',
 #                    type="character",
 #                    help='gz-compressed H5 file containing (integrated_from_counts) data as AnnData')
 
-parser$add_argument('--integrate.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
+#parser$add_argument('--integrate.ad',
+#                    type="character",
+#                    help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
 
 parser$add_argument('--visualize.csv.gz',
                     type="character",
