@@ -188,11 +188,11 @@ scVI = function(args){
   so <- JoinLayers(so)
   message(dim(so@reductions$integrated))
   message("1\n")
-  message(sum(rownames(so[['pca']]@cell.embeddings)!=colnames(so)))
+  message(sum(rownames(so[['integrated']]@cell.embeddings)!=colnames(so)))
   message("2\n")
-  rownames(so[['pca']]@cell.embeddings)[rownames(so[['pca']]@cell.embeddings) != colnames(so)]
+  rownames(so[['integrated']]@cell.embeddings)[rownames(so[['integrated']]@cell.embeddings) != colnames(so)]
   message("3\n")
-  rownames(so[['pca']]@cell.embeddings) = colnames(so)
+  rownames(so[['integrated']]@cell.embeddings) = colnames(so)
   message("4\n")
   return(so)
 }
