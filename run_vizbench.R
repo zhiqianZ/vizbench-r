@@ -104,6 +104,11 @@ parser$add_argument('--py_path',
                     default="/usr/bin/python3",
                     help='the path of the Python for the reticulate package to use')
 
+parser$add_argument('--scvi_conda', 
+                    type="character",
+                    default="/usr/bin/python3",
+                    help='the path of the Python for the reticulate package to use')
+
 # parser$add_argument('--data.true_labels',
 #                     type="character",
 #                     help='gz-compressed textfile with the true labels; used to select a range of ks.')
