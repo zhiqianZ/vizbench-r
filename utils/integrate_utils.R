@@ -29,7 +29,7 @@ harmony = function(args) {
     VariableFeatures(so) <- hvgs
     so <- ScaleData(so) 
   }else{
-    hvgs <- read_hvgs(args$sct.hvgs.json)
+    hvgs <- rownames(so)
     VariableFeatures(so) <- hvgs
   }
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
@@ -58,7 +58,7 @@ SeuratRPCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
-    hvgs <- read_hvgs(args$sct_hvgs.json)
+    hvgs <- rownames(so)
     VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
@@ -93,7 +93,7 @@ SeuratCCA = function(args){
        features = VariableFeatures(so)
      ) 
   }else{
-    hvgs <- read_hvgs(args$sct_hvgs.json)
+    hvgs <- rownames(so)
     VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
@@ -126,7 +126,7 @@ fastMNN = function(args) {
                                  features = VariableFeatures(so),
                                  assay.type = "logcounts")
   }else{
-    hvgs <- read_hvgs(args$sct_hvgs.json)
+    hvgs <- rownames(so)
     VariableFeatures(so) <- hvgs
     so = IntegrateLayers(
       object = so, method = FastMNNIntegration,
