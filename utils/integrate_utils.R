@@ -157,7 +157,7 @@ LIGER = function(args){
    so[["integrated"]] = so[["inmfNorm"]]
    so <- JoinLayers(so)
    hvgs = rownames(so[['RNA']]$ligerScaleData)
-   so = so[,hvgs]
+   so = so[hvgs,]
    return(so)
 }
 
@@ -188,7 +188,7 @@ scVI = function(args){
   so <- JoinLayers(so)
   message(dim(so@reductions$integrated))
   message("1\n")
-  message(sum(rownames(sp[['pca']]@cell.embeddings)!=colnames(so)))
+  message(sum(rownames(so[['pca']]@cell.embeddings)!=colnames(so)))
   message("2\n")
   rownames(so[['pca']]@cell.embeddings)[rownames(so[['pca']]@cell.embeddings) != colnames(so)]
   message("3\n")
