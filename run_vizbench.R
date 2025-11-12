@@ -91,7 +91,7 @@ parser$add_argument('--normalize.json',
 #                    type="character",
 #                    help='gz-compressed H5 file containing (integrated_from_counts) data as AnnData')
 
-parser$add_argument('--integrate_norm.ad',
+parser$add_argument('--integrate.ad',
                     type="character",
                     help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
 
@@ -118,10 +118,6 @@ message("Additional parameters: ", args$params)
 message("name: ", args$name)
 message("Verbose: ", args$verbose)
 
-if(args$what %in% c("integratenorm", "integrateraw")){
-  args$what = "integrate"
-}
-
 # infer the current directory (useful for debugging)
 cargs <- commandArgs(trailingOnly = FALSE)
 m <- grep("--file=", cargs)
@@ -131,6 +127,10 @@ message("libPaths: ", paste0(.libPaths(),collapse=";"))
 info <- Sys.info()
 message("info: ", paste0(names(info),"=",info,collapse=";"))
 
+
+if(args$what %in% c("integratenorm", "integrateraw")){
+  args$what = "integrate"
+}
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
 if( file.exists(helpers) ) {
