@@ -17,7 +17,7 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 # define arguments
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
-                                "integrate", "visualize", "metric"),
+                                "integratenorm", "visualizenorm", "metric"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
@@ -183,7 +183,7 @@ if ( !("error" %in% class(fun)) ) {
 }
 
 # write to AnnData via anndataR
-if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
+if (args$what %in% c("rawdata", "simulate", "normalize", "integratenorm")) {
   # here, always writing data files as AD (HDF5)
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
   if(typeof(x)!="environment"){
@@ -202,20 +202,20 @@ if (args$what == "normalize") {
   #fn <- file.path(args$output_dir, paste0(args$name,"_sct_hvgs.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
-if(args$what == "integrate"){
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
+if(args$what == "integratenorm"){
+  fn <- file.path(args$output_dir, paste0(args$name, "_integrate", ".json"))
   write(toJSON(list(intgrate=args$flavour)), fn)
-  #fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_hvg.json"))
+  #fn <- file.path(args$output_dir, paste0(args$name, "_integrate", "_hvg.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
 if(args$what == "simulate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
   saveRDS(para, fn)
 }
-if (args$what == "visualize") {
+if (args$what == "visualizenorm") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
-                         paste0(args$name,"_",args$what, ".csv.gz")))
+                         paste0(args$name, "_visualize", ".csv.gz")))
   write_csv(as.data.frame(x), file = fn)
 } else if (args$what == "metric") {
   # 'x' is something here
