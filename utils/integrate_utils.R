@@ -145,8 +145,7 @@ LIGER = function(args){
   message("Running LIGER")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
-  #norm_method <- read_normmethod(args$normalize.json)
-  so <- read_seurat(args$normalize.ad)
+  so <- read_seurat(args$simulate.ad)
   
   so <- so %>%
      normalize() %>%
@@ -166,8 +165,7 @@ scVI = function(args){
   message("Running scVI")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
-  #norm_method <- read_normmethod(args$normalize.json)
-  so <- read_seurat(args$normalize.ad)
+  so <- read_seurat(args$simulate.ad)
   
   so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
   hvgs <- find_hvgs_seuratv5(so, nhvgs)
