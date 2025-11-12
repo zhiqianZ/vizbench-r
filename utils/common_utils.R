@@ -18,8 +18,8 @@ write_seurat_ad <- function(x, file, verbose = TRUE) {
 read_normmethod <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$normalize
 
-read_integratemethod <- function(f) fromJSON(paste(readLines(f), 
-                                              collapse=""))$integrate
+# read_integratemethod <- function(f) fromJSON(paste(readLines(f), 
+#                                               collapse=""))$integrate
 
 read_hvgs <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$hvgs
