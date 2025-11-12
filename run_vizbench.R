@@ -17,7 +17,7 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 # define arguments
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
-                                "integratenorm", "visualizenorm", "metric"),
+                                "integratenorm", "visualizenorm", "integrateraw", "metric"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
@@ -202,7 +202,7 @@ if (args$what == "normalize") {
   #fn <- file.path(args$output_dir, paste0(args$name,"_sct_hvgs.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
-if(args$what == "integratenorm"){
+if(args$what %in% c("integratenorm","integrateraw")){
   fn <- file.path(args$output_dir, paste0(args$name, "_integrate", ".json"))
   write(toJSON(list(intgrate=args$flavour)), fn)
   #fn <- file.path(args$output_dir, paste0(args$name, "_integrate", "_hvg.json"))
