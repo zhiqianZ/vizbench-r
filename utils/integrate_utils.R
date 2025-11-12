@@ -156,6 +156,8 @@ LIGER = function(args){
      quantileNorm()
    so[["integrated"]] = so[["inmfNorm"]]
    so <- JoinLayers(so)
+   hvgs = rownames(so[['RNA']]@scale.data)
+   so = so[,hvgs]
    return(so)
 }
 
@@ -185,7 +187,13 @@ scVI = function(args){
   )
   so <- JoinLayers(so)
   message(dim(so@reductions$integrated))
-  message(all.equal(rownames(so@reductions$integrated), colnames(so)))
+  message("1\n")
+  message(sum(rownames(so@reductions$integrated)==colnames(so)))
+  message("2\n")
+  rownames(so@reductions$integrated)[rownames(so@reductions$integrated) != colnames(so)]
+  message("3\n")
+  rownames(so@reductions$integrated) = colnames(so)
+  message("4\n")
   return(so)
 }
 
