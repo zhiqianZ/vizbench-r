@@ -22,7 +22,8 @@ sctransform = function(args){
   seurat.obj[["RNA"]] <- split(seurat.obj[["RNA"]], f = seurat.obj$batch)
   seurat.obj = SCTransform(seurat.obj, vst.flavor = "v2", verbose = FALSE, 
               variable.features.n = nhvgs, method = "glmGamPoi")
-  seurat.obj = seurat.obj[VariableFeatures(seurat.obj),]
+  
+  seurat.obj = seurat.obj[rownames(seurat.obj[['SCT']]$scale.data),]
   return(seurat.obj)
 }
 
