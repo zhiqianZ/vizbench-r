@@ -21,7 +21,8 @@ sctransform = function(args){
   nhvgs = args$nhvgs
   seurat.obj[["RNA"]] <- split(seurat.obj[["RNA"]], f = seurat.obj$batch)
   seurat.obj = SCTransform(seurat.obj, vst.flavor = "v2", verbose = FALSE, 
-              variable.features.n = nhvgs, method = "glmGamPoi",min_cells=0)
+              variable.features.n = nhvgs, method = "glmGamPoi")
+  seurat.obj = seurat.obj[VariableFeatures(seurat.obj),]
   return(seurat.obj)
 }
 
