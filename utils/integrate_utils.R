@@ -3,7 +3,7 @@ load_pkgs <- function() {
   library(SeuratWrappers)
   library(Seurat)
   library(harmony)
-  #library(rliger)
+  library(rliger)
   library(Rfast)
   library(dplyr)
   library(anndataR)
@@ -162,9 +162,9 @@ LIGER = function(args){
 
 scVI = function(args){
   message("Running scVI")
-  message("Running scVI")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
+  scvi_conda <- args$scvi_conda
   so <- read_seurat(args$simulate.ad)
   
   so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
@@ -174,7 +174,7 @@ scVI = function(args){
     so,
     method = scVIIntegration,
     new.reduction = "integrated",
-    #conda_env = "Benchmark",
+    conda_env = scvi_conda,
     verbose = T,
     features = hvgs,
     ndims = npcs,
