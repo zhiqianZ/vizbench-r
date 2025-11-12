@@ -184,6 +184,8 @@ scVI = function(args){
     assay = "RNA"
   )
   so <- JoinLayers(so)
+  message(dim(so@reductions$integrated))
+  message(all.equal(rownames(so@reductions$integrated), colnames(so)))
   return(so)
 }
 
