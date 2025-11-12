@@ -17,7 +17,7 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 # define arguments
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
-                                "integratenorm", "visualizenorm", "integrateraw", "metric"),
+                                "integratenorm", "integrateraw", "visualize", "metric"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
@@ -118,6 +118,10 @@ message("Additional parameters: ", args$params)
 message("name: ", args$name)
 message("Verbose: ", args$verbose)
 
+if(args$what %in% c("integratenorm", "integrateraw")){
+  args$what = "integrate"
+}
+
 # infer the current directory (useful for debugging)
 cargs <- commandArgs(trailingOnly = FALSE)
 m <- grep("--file=", cargs)
@@ -133,7 +137,7 @@ if( file.exists(helpers) ) {
   message("Sourcing .. ", helpers)
   source(helpers)
 } else {
-  message(paste0("Helper code in ",helpers," not found. Exiting."))
+  message(paste0("Helper code in ", helpers, " not found. Exiting."))
   quit("no", status = 1)
 }
 
@@ -146,7 +150,7 @@ if (args$what == "normalize") {
     message("Sourcing .. ", helpers)
     source_python(helpers, convert = FALSE)
   } else {
-    message(paste0("Helper code in ",helpers," not found. Exiting."))
+    message(paste0("Helper code in ", helpers, " not found. Exiting."))
     quit("no", status = 1)
   }
 }
@@ -160,9 +164,9 @@ if( file.exists(helpers) ) {
     message("Sourcing .. ", helpers)
     source(helpers)
 } else {
-    message(paste0("Helper code in ",helpers," not found. Exiting."))
+    message(paste0("Helper code in ", helpers, " not found. Exiting."))
     quit("no", status = 1)
-}
+} 
 
 # load packages
 suppressPackageStartupMessages(load_pkgs())
@@ -183,7 +187,7 @@ if ( !("error" %in% class(fun)) ) {
 }
 
 # write to AnnData via anndataR
-if (args$what %in% c("rawdata", "simulate", "normalize", "integratenorm")) {
+if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
   # here, always writing data files as AD (HDF5)
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
   if(typeof(x)!="environment"){
@@ -197,22 +201,22 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integratenorm")) {
 } 
 # write memento about normalization method
 if (args$what == "normalize") {
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
+  fn <- file.path(args$output_dir, paste0(args$name,"_", args$what, ".json"))
   write(toJSON(list(normalize=args$flavour)), fn)
   #fn <- file.path(args$output_dir, paste0(args$name,"_sct_hvgs.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
-if(args$what %in% c("integratenorm","integrateraw")){
-  fn <- file.path(args$output_dir, paste0(args$name, "_integrate", ".json"))
+if(args$what == "integrate"){
+  fn <- file.path(args$output_dir, paste0(args$name, args$what, ".json"))
   write(toJSON(list(intgrate=args$flavour)), fn)
-  #fn <- file.path(args$output_dir, paste0(args$name, "_integrate", "_hvg.json"))
+  #fn <- file.path(args$output_dir, paste0(args$name, args$what, "_hvg.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
 if(args$what == "simulate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
   saveRDS(para, fn)
 }
-if (args$what == "visualizenorm") {
+if (args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
                          paste0(args$name, "_visualize", ".csv.gz")))
