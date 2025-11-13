@@ -45,7 +45,7 @@ FItSNE =  function(args){
   so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
-  latent = so@reductions$integrated@cell.embeddings[,1:npcs]
+  latent = Embeddings(so,"integrated")[,1:npcs]
   pcaInit = prcomp(latent, rank=2)$x 
   pcaInit = pcaInit / (sd(pcaInit[,1])* (nrow(pcaInit)-1) / nrow(pcaInit) ) * 0.0001
   vis = fftRtsne(latent, nthreads = nthreads, 
@@ -56,7 +56,30 @@ FItSNE =  function(args){
   return(vis)
 }
 
+denSNE = function(args){
+  message("Running denSNE")
+  fn = args$integrate.ad
+  so <- read_seurat(fn)
+  npcs <- args$npcs
+  nthreads <- args$nthreads
+  
+  latent = Embeddings(so,"integrated")[,1:npcs]
+  vis = densne(latent, num_threads = nthreads)
+  rownames(vis) = colnames(so)
+  return(vis)
+}
 
+PHATE = function(seurat.obj, n.pcs=50, n.cores=5){
+  message("Running PHATE")
+  fn = args$integrate.ad
+  so <- read_seurat(fn)
+  npcs <- args$npcs
+  nthreads <- args$nthreads
+  latent = Embeddings(so,"integrated")[,1:npcs]
+  vis = phate(latent, n.jobs = nthreads)$embedding
+  rownames(vis) = colnames(so)
+  return(vis)
+}
 
 
 
