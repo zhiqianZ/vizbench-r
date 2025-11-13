@@ -2,6 +2,7 @@
 load_pkgs <- function() {
   library(SeuratWrappers)
   library(Seurat)
+  library(SingleCellExperiment)
   library(irlba)
   library(readr)
   library(parallel)
@@ -134,7 +135,7 @@ distance_preservation = function(args, seed=42){
   rm(sce)
   
   val = sapply(unique(batch), function(b){
-    h = mean_par[mea_par$batch==b,]
+    h = mean_par[mean_par$batch==b,]
     l = apply(data[batch==b,],2, function(d) tapply(d, celltype[batch==b], mean))
     l = l[complete.cases(l),]
     l = l[h$celltype,]
@@ -167,7 +168,7 @@ variance_preservation = function(args, seed=42){
   
   val = sapply(unique(batch), function(b){
     
-    h = var_par[mea_par$batch==b,]
+    h = var_par[mean_par$batch==b,]
     l = apply(data[batch==b,],2, function(d) tapply(d, celltype[batch==b], var))
     l = l[complete.cases(l),]
     l = l[h$celltype,]
