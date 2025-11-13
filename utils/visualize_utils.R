@@ -6,13 +6,7 @@ SeuratUMAP = function(args){
   message("Running SeuratUMAP")
   npcs <- args$npcs
   nthreads <- args$nthreads
-  message(args$integrate_raw.ad)
-  message(args$integrate_norm.ad)
-  if(is.null(args$integrate_norm.ad)){
-    fn = args$integrate_raw.ad
-  }else{
-    fn = args$integrate_norm.ad
-  }
+  fn = args$integrate.ad
   so <- read_seurat(fn)
   so = RunUMAP(so, dims = 1:npcs, 
                        reduction="integrated",
@@ -22,13 +16,7 @@ SeuratUMAP = function(args){
 
 BHtSNE = function(args){
   message("Running BH-tSNE")
-  message(args$integrate_raw.ad)
-  message(args$integrate_norm.ad)
-  if(is.null(args$integrate_norm.ad)){
-    fn = args$integrate_raw.ad
-  }else{
-    fn = args$integrate_norm.ad
-  }
+  fn = args$integrate.ad
   so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
@@ -40,13 +28,7 @@ BHtSNE = function(args){
 
 densMAP = function(args){
   message("Running densMAP")
-  message(args$integrate_raw.ad)
-  message(args$integrate_norm.ad)
-  if(is.null(args$integrate_norm.ad)){
-    fn = args$integrate_raw.ad
-  }else{
-    fn = args$integrate_norm.ad
-  }
+  fn = args$integrate.ad
   so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
@@ -59,13 +41,7 @@ densMAP = function(args){
 
 FItSNE =  function(args){
   message("Running FIt-SNE")
-  message(args$integrate_raw.ad)
-  message(args$integrate_norm.ad)
-  if(is.null(args$integrate_norm.ad)){
-    fn = args$integrate_raw.ad
-  }else{
-    fn = args$integrate_norm.ad
-  }
+  fn = args$integrate.ad
   so <- read_seurat(fn)
   npcs <- args$npcs
   nthreads <- args$nthreads
