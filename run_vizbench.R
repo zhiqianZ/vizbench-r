@@ -26,12 +26,13 @@ parser$add_argument("--what",
 # TODO: add subparser?
 
 parser$add_argument("--flavour", 
-                    choices = c("mouse_pancreas",                                                                         # raw data
-                                "scdesign3",                                                                              # simulate
-                                "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian",         # normalize
-                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                         # integrate
-                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA",  # visualize
-                                "celltype_shape","batch_mixture"),        # metrics
+                    choices = c("mouse_pancreas",                                                                                    # raw data
+                                "scdesign3",                                                                                         # simulate
+                                "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "Sanity"           # normalize
+                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                                    # integrate
+                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA",             # visualize
+                                "celltype_shape", "batch_mixture", "distance_preservation", "variance_preservation",
+                                "variance_samplesize", "library_size", "zero_proportion", "celltype_separation"),                    # metrics
                     required = TRUE, 
                     help = "Module to run: name depends on the 'what'")
 
@@ -182,9 +183,9 @@ fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
     x <- fun(as.list(args)) # execute function 
     if(args$what == "simulate"){
-      mean_par = x$mean_par
-      var_par = x$var_par
-      x = x$obj
+      mean_par <- x$mean_par
+      var_par <- x$var_par
+      x <- x$obj
     }
   message("done running")
 } else {
@@ -200,23 +201,18 @@ if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
     write_seurat_ad(x, fn)
   }else{
     if(args$verbose) message(paste0("Writing: ", fn, "."))
-    message(ls(x))
     x$write_h5ad(fn, compression = "gzip")
-    message("done")
   }
 } 
 # write memento about normalization method
-if (args$what == "normalize") {
+if(args$what == "normalize") {
   fn <- file.path(args$output_dir, paste0(args$name,"_", args$what, ".json"))
   write(toJSON(list(normalize=args$flavour)), fn)
-  #fn <- file.path(args$output_dir, paste0(args$name,"_sct_hvgs.json"))
-  #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
+                
 if(args$what == "integrate"){
   fn <- file.path(args$output_dir, paste0(args$name, args$what, ".json"))
   write(toJSON(list(intgrate=args$flavour)), fn)
-  #fn <- file.path(args$output_dir, paste0(args$name, args$what, "_hvg.json"))
-  #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
                 
 if(args$what == "simulate"){
@@ -236,7 +232,6 @@ if(args$what == "visualize") {
     x_R <- py_to_r(x)
     write.csv(x_R, fn, row.names = FALSE)
   }
-  
 } else if (args$what == "metric") {
   # 'x' is something here
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
