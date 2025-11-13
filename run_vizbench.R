@@ -50,6 +50,12 @@ parser$add_argument("--npcs", type = "integer", default = 50,
 parser$add_argument("--nhvgs", type = "integer", default = 2000,
                     help = "number of hvgs used")
 
+parser$add_argument("--B", type = "integer", default = 100,
+                    help = "Resampling replicate times for calcualting metrics")
+
+parser$add_argument("--N", type = "integer", default = 10000,
+                    help = "Resampling sample size for calcualting metrics")
+
 parser$add_argument("--use_simulation", type = "logical", default = TRUE,
                     help = "whether used the simulated datasets to benchmark")
 
@@ -71,6 +77,14 @@ parser$add_argument('--simulate.ad',
                     type="character",
                     help='gz-compressed H5 file containing (simulated) data as AnnData')
 
+parser$add_argument('--simulate_mean.csv.gz',
+                    type="character",
+                    help='gz-compressed CSV file containing per batch and cell-type gene-wise true mean parameters')
+
+parser$add_argument('--simulate_var.csv.gz',
+                    type="character",
+                    help='gz-compressed CSV file containing per batch and cell-type gene-wise true variance parameters')
+
 parser$add_argument('--normalize.ad',
                     type="character",
                     help='gz-compressed H5 file containing (normalized) data as AnnData')
@@ -78,14 +92,6 @@ parser$add_argument('--normalize.ad',
 parser$add_argument('--normalize.json',
                     type="character",
                     help='JSON file containing name of normalization method')
-
-#parser$add_argument('--integration.json',
-#                    type="character",
-#                    help='JSON file containing name of integration method')
-
-#parser$add_argument('--sct_hvgs.json',
-#                    type="character",
-#                    help='JSON file containing highly variable genes for SCTransform')
 
 parser$add_argument('--integrate.ad',
                     type="character",
@@ -104,11 +110,6 @@ parser$add_argument('--scvi_conda',
                     type="character",
                     default="/usr/bin/python3",
                     help='the path of the Python for the reticulate package to use')
-
-# parser$add_argument('--data.true_labels',
-#                     type="character",
-#                     help='gz-compressed textfile with the true labels; used to select a range of ks.')
-
 
 # send details to be logged
 args <- parser$parse_args()
@@ -181,7 +182,8 @@ fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
     x <- fun(as.list(args)) # execute function 
     if(args$what == "simulate"){
-      para = x$parameters
+      mean_par = x$mean_par
+      var_par = x$var_par
       x = x$obj
     }
   message("done running")
@@ -216,10 +218,14 @@ if(args$what == "integrate"){
   #fn <- file.path(args$output_dir, paste0(args$name, args$what, "_hvg.json"))
   #write(toJSON(list(hvgs = VariableFeatures(x))), fn)
 }
+                
 if(args$what == "simulate"){
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
-  saveRDS(para, fn)
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_mean.csv.gz"))
+  write_csv(as.data.frame(mean_par), file = fn)
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_var.csv.gz"))
+  write_csv(as.data.frame(var_par), file = fn)
 }
+                
 if(args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
