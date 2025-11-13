@@ -1,5 +1,7 @@
 load_pkgs <- function() {
   library(Seurat)
+  library(densvis)
+  library(phateR)
 }
 
 SeuratUMAP = function(args){
