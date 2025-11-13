@@ -17,7 +17,7 @@ load_pkgs <- function() {
 celltype_shape = function(args) {
   
   # read embeddings
-  data <- read_csv(args$visualize.csv.gz)
+  data <- as.data.frame(read_csv(args$visualize.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
@@ -45,7 +45,7 @@ batch_mixture <- function(args, seed=42){
   set.seed(seed)
   
   # read embeddings
-  data <- read_csv(args$visualize.csv.gz)
+  data <- as.data.frame(read_csv(args$visualize.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
@@ -87,7 +87,7 @@ celltype_separation = function(args, seed=42){
   set.seed(seed)
   
   # read embeddings
-  data <- read_csv(args$visualize.csv.gz)
+  data <- as.data.frame(read_csv(args$visualize.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
@@ -114,7 +114,7 @@ celltype_separation = function(args, seed=42){
     }
     ), na.rm=T)
     return(res)
-  },mc.cores = n.cores)
+  }, mc.cores = nthreads)
   val = unlist(val)
   return(mean(val,na.rm=T))
 }
@@ -126,8 +126,8 @@ distance_preservation = function(args, seed=42){
   set.seed(seed)
   
   # read embeddings
-  data <- read_csv(args$visualize.csv.gz)
-  mean_par <- read_csv(args$simulate_mean.csv.gz)
+  data <- as.data.frame(read_csv(args$visualize.csv.gz))
+  mean_par <- as.data.frame(read_csv(args$simulate_mean.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
@@ -159,7 +159,7 @@ variance_preservation = function(args, seed=42){
   
   # read embeddings
   data <- read_csv(args$visualize.csv.gz)
-  var_par <- read_csv(args$simulate_mean.csv.gz)
+  var_par <- as.data.frame(read_csv(args$simulate_var.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
@@ -215,7 +215,7 @@ library_size = function(args, seed=42){
   sce <- read_sce(args$integrate.ad)
   batch <- sce$batch
   celltype <- sce$celltype
-  library_size <- sce$nCount.RNA
+  library_size <- sce$nCount_RNA
   rm(sce)
   
   if(nrow(data)<100000){
