@@ -10,7 +10,7 @@ def scanpyUMAP(args):
   adata = sc.read_h5ad(adata_path)
   sc.pp.neighbors(adata, n_pcs=npcs, use_rep = "integrated")
   sc.tl.umap(adata)
-  adata.obsm['X_umap']
+  return adata.obsm['X_umap']
   
     
 def graphFA(args):
@@ -20,5 +20,5 @@ def graphFA(args):
   adata = sc.read_h5ad(adata_path)
   sc.pp.neighbors(adata, n_pcs=npcs, use_rep = "integrated")
   sc.tl.draw_graph(adata)
-  adata.obsm['X_draw_graph_fa']
+  return adata.obsm['X_draw_graph_fa']
   
