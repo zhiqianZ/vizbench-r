@@ -140,20 +140,31 @@ scdesign3 <- function(args) {
   # Compute mean and variance parameters
   parameters <- list()
 
-  parameters$mean <- lapply(idx_list, function(idx) {
-    mat <- para$mean_mat[unlist(idx), , drop = FALSE]
-    rownames(mat) <- names(idx)
-    mat
+  mean_par <- lapply(names(idx_list), function(b) {
+  idx <- idx_list[[b]]
+  mat <- para$mean_mat[unlist(idx), , drop = FALSE]
+  data.frame(
+    batch = b,
+    celltype = names(idx),
+    mat,
+    check.names = FALSE
+  )
   })
-
-  parameters$var <- lapply(idx_list, function(idx) {
-    mean_mat <- para$mean_mat[unlist(idx), , drop = FALSE]
-    var_mat <- mean_mat^2 * para$sigma_mat[unlist(idx), , drop = FALSE]
-    rownames(var_mat) <- names(idx)
-    var_mat
+  mean_par <- do.call(rbind, mean_par)
+  
+  var_par <- lapply(names(idx_list), function(b) {
+  idx <- idx_list[[b]]
+  mean_mat <- para$mean_mat[unlist(idx), , drop = FALSE]
+  var_mat  <- mean_mat^2 * para$sigma_mat[unlist(idx), , drop = FALSE]
+  data.frame(
+    batch = b,
+    celltype = names(idx),
+    var_mat,
+    check.names = FALSE
+  )
   })
-
-  parameters$labels <- coldat			
-  return(list(obj=seurat.obj, parameters=parameters))
+  var_par <- do.call(rbind, var_par)
+  
+  return(list(obj=seurat.obj, mean_par = mean_par, var_par = var_par))
 }
 
