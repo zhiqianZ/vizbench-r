@@ -79,7 +79,7 @@ batch_mixture <- function(args, seed=42){
 }
 
 
-celltype_separation = function(args, seed=42 B = 100, n = 10000){
+celltype_separation = function(args, seed=42){
   nthreads = args$nthreads
   B = args$B
   n = args$N
