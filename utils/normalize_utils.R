@@ -1,6 +1,7 @@
 
 load_pkgs <- function() {
   library(Seurat)
+  library(SanityR)
 }
 
 log1pCP10k = function(args){
@@ -29,18 +30,28 @@ sctransform = function(args){
 
 
 Sanity = function(args){
-  sanity_exec <- args$sanity_path
-  input_mat <- args$input_mat
-  input_genes <- args$input_genes 
-  input_cells <- args$input_cells
-  output_dir <- args$sanity_output
-  num_threads = args$nthreads
-  system2(file.path(sanity_exec, "bin/Sanity"), args = c(paste0("--file ", input_mat),
-                                                                  paste0("--mtx_gene_name_file ", input_genes),
-                                                                  paste0("--mtx_cell_name_file ", input_cells),
-                                                                 paste0("--destination ", output_dir),
-                                                                 paste0("--n_threads ", num_threads)))
-  return("Done")
+  seurat.obj <- read_seurat(args$simulate.ad)
+  sce <- read_sce(args$simulate.ad)
+  # run sanity by batch 
+  sce_list <- split(seq_len(ncol(sce)), sce$batch)
+  sce_list <- lapply(sce_list, function(idx) {
+  sub <- sce[, idx]
+  sf <- scater::librarySizeFactors(sub)
+  sizeFactors(sub) <- sf / mean(sf)
+  sub <- Sanity(sub)
+  sub
+  })
+  norm_mat <- logcounts(sce_sanity)
+  # Ensure cell order matches Seurat object
+  norm_mat <- norm_mat[, colnames(seurat.obj)]
+  
+  seurat.obj <- SetAssayData(
+  object = seurat.obj,
+  assay = "RNA",
+  slot = "data",
+  new.data = norm_mat
+  )
+  seurat.obj
 }
 
 
