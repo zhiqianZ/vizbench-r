@@ -30,6 +30,7 @@ harmony = function(args) {
     so <- ScaleData(so) 
   }else{
     hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     VariableFeatures(so) <- hvgs
   }
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
@@ -59,6 +60,7 @@ SeuratRPCA = function(args){
      ) 
   }else{
     hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
@@ -94,6 +96,7 @@ SeuratCCA = function(args){
      ) 
   }else{
     hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     VariableFeatures(so) <- hvgs
     so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
     so = IntegrateLayers(
@@ -127,6 +130,7 @@ fastMNN = function(args) {
                                  assay.type = "logcounts")
   }else{
     hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     VariableFeatures(so) <- hvgs
     so = IntegrateLayers(
       object = so, method = FastMNNIntegration,
