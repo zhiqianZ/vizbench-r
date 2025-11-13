@@ -28,7 +28,19 @@ sctransform = function(args){
 }
 
 
-
+Sanity = function(args){
+  sanity_exec <- args$sanity_path
+  input_mat <- args$input_mat
+  input_genes <- args$input_genes 
+  input_cells <- args$input_cells
+  output_dir <- args$sanity_output
+  num_threads = args$nthreads
+  system2(file.path(sanity_exec, "bin/Sanity"), args = c(paste0("--file ", input_mat),
+                                                                  paste0("--mtx_gene_name_file ", input_genes),
+                                                                  paste0("--mtx_cell_name_file ", input_cells),
+                                                                 paste0("--destination ", output_dir),
+                                                                 paste0("--n_threads ", num_threads)))
+}
 
 
 
