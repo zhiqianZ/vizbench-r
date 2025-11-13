@@ -220,11 +220,17 @@ if(args$what == "simulate"){
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_parameters.RDS"))
   saveRDS(para, fn)
 }
-if (args$what == "visualize") {
+if(args$what == "visualize") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
                          paste0(args$name, "_visualize", ".csv.gz")))
-  write_csv(as.data.frame(x), file = fn)
+  if(!args$flavour %in% c("scanpyUMAP","graphFA")){
+    write_csv(as.data.frame(x), file = fn)
+  }else{
+    x_R <- py_to_r(x)
+    write.csv(x_R, fn, row.names = FALSE)
+  }
+  
 } else if (args$what == "metric") {
   # 'x' is something here
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
