@@ -37,8 +37,10 @@ celltype_shape = function(args) {
 }
 
 
-batch_mixture <- function(args, seed=42, B = 100, n = 10000){
+batch_mixture <- function(args, seed=42){
   nthreads = args$nthreads
+  B = args$B
+  n = args$N
   set.seed(seed)
   
   # read embeddings
@@ -79,6 +81,8 @@ batch_mixture <- function(args, seed=42, B = 100, n = 10000){
 
 celltype_separation = function(args, seed=42 B = 100, n = 10000){
   nthreads = args$nthreads
+  B = args$B
+  n = args$N
   set.seed(seed)
   
   # read embeddings
@@ -132,9 +136,9 @@ distance_preservation = function(args, seed=42){
   val = sapply(unique(batch), function(b){
     h = mean_par[mea_par$batch==b,]
     l = apply(data[batch==b,],2, function(d) tapply(d, celltype[batch==b], mean))
-    h = h[complete.cases(h), 3:ncol(h)]
     l = l[complete.cases(l),]
-    l = l[rownames(h),]
+    l = l[h$celltype,]
+    h = h[complete.cases(h), 3:ncol(h)]
     v = apply(h, 2, sd)
     h = h[,v!=0]
     pca_res <- prcomp(h, center = TRUE, scale. = TRUE)
@@ -165,9 +169,9 @@ variance_preservation = function(args, seed=42){
     
     h = var_par[mea_par$batch==b,]
     l = apply(data[batch==b,],2, function(d) tapply(d, celltype[batch==b], var))
-    h = h[complete.cases(h),3:ncol(h)]
     l = l[complete.cases(l),]
-    l = l[rownames(h),]
+    l = l[h$celltype,]
+    h = h[complete.cases(h),3:ncol(h)]
     hv = rowSums(h)
     lv = rowSums(l)
     cor(hv, lv, method = "spearman")
@@ -200,6 +204,8 @@ variance_samplesize = function(args, seed=42){
 
 library_size = function(args, seed=42){
   nthreads = args$nthreads
+  B = args$B
+  n = args$N
   set.seed(seed)
   
   # read embeddings
@@ -236,6 +242,8 @@ library_size = function(args, seed=42){
 
 zero_proportion = function(args, seed=42){
   nthreads = args$nthreads
+  B = args$B
+  n = args$N
   set.seed(seed)
   
   # read embeddings
