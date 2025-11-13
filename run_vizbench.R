@@ -132,6 +132,9 @@ message("info: ", paste0(names(info),"=",info,collapse=";"))
 if(args$what %in% c("integratenorm", "integrateraw")){
   args$what = "integrate"
 }
+
+options(future.globals.maxSize = 500 * 1024^3)
+
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
 if( file.exists(helpers) ) {
@@ -145,7 +148,7 @@ if( file.exists(helpers) ) {
 use_python(args$py_path)
 
 # source normalization python helper functions
-if (args$what == "normalize") {
+if (args$what %in% c("normalize", "visualize")) {
   helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.py"))
   if( file.exists(helpers) ) {
     message("Sourcing .. ", helpers)
