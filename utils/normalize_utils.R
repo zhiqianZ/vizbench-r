@@ -40,6 +40,7 @@ Sanity = function(args){
                                                                   paste0("--mtx_cell_name_file ", input_cells),
                                                                  paste0("--destination ", output_dir),
                                                                  paste0("--n_threads ", num_threads)))
+  return("Done")
 }
 
 
