@@ -34,21 +34,22 @@ Sanity = function(args){
   sce <- read_sce(args$simulate.ad)
   # run sanity by batch 
   sce_list <- split(seq_len(ncol(sce)), sce$batch)
-  sce_list <- lapply(sce_list, function(idx) {
-  sub <- sce[, idx]
-  sf <- scater::librarySizeFactors(sub)
-  sizeFactors(sub) <- sf / mean(sf)
-  sub <- Sanity(sub)
-  sub
+  sce_sanity <- lapply(sce_list, function(idx) {
+    sub <- sce[, idx]
+    sf <- scater::librarySizeFactors(sub)
+    sizeFactors(sub) <- sf / mean(sf)
+    assay(sub, "counts") <- as.matrix(counts(sub))
+    sub <- Sanity(sub)
+    logcounts(sub)
   })
-  norm_mat <- logcounts(sce_sanity)
+  norm_mat <- do.call(cbind, sce_sanity)
   # Ensure cell order matches Seurat object
   norm_mat <- norm_mat[, colnames(seurat.obj)]
   
   seurat.obj <- SetAssayData(
   object = seurat.obj,
   assay = "RNA",
-  slot = "data",
+  layer = "data",
   new.data = norm_mat
   )
   seurat.obj
