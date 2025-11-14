@@ -2,6 +2,7 @@
 load_pkgs <- function() {
   library(Seurat)
   library(SanityR)
+  library(SingleCellExperiment)
 }
 
 log1pCP10k = function(args){
