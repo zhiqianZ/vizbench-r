@@ -31,6 +31,8 @@ sctransform = function(args){
 
 
 Sanity = function(args){
+  message("Running Sanity")
+  message(args$simulate.ad)
   seurat.obj <- read_seurat(args$simulate.ad)
   sce <- read_sce(args$simulate.ad)
   # run sanity by batch 
@@ -53,7 +55,7 @@ Sanity = function(args){
   layer = "data",
   new.data = norm_mat
   )
-  seurat.obj
+  return(seurat.obj)
 }
 
 
