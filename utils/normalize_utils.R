@@ -38,9 +38,9 @@ sanity = function(args){
   sce_list <- split(seq_len(ncol(sce)), sce$batch)
   sce_sanity <- lapply(sce_list, function(idx) {
     sub <- sce[, idx]
+    assay(sub, "counts") <- as.matrix(counts(sub))
     sf <- scater::librarySizeFactors(sub)
     sizeFactors(sub) <- sf / mean(sf)
-    assay(sub, "counts") <- as.matrix(counts(sub))
     sub <- Sanity(sub)
     logcounts(sub)
   })
