@@ -167,8 +167,7 @@ variance_preservation = function(args, seed=42){
   rm(sce)
   
   val = sapply(unique(batch), function(b){
-    
-    h = var_par[mean_par$batch==b,]
+    h = var_par[var_par$batch==b,]
     l = apply(data[batch==b,],2, function(d) tapply(d, celltype[batch==b], var))
     l = l[complete.cases(l),]
     l = l[h$celltype,]
