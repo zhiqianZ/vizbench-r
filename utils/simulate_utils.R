@@ -125,8 +125,8 @@ scdesign3 <- function(args) {
 	  seurat.obj = CreateSeuratObject(counts, 
 				  meta.data=coldat)
   }
-  batch <- coldat$batch
-  celltype <- coldat$celltype
+  batch <- seurat.obj$batch
+  celltype <- seurat.obj$celltype
   uniq_batch <- unique(batch)
 
   #Build index list: one representative cell index per celltype in each batch
@@ -151,6 +151,7 @@ scdesign3 <- function(args) {
   )
   })
   mean_par <- do.call(rbind, mean_par)
+  mean_par <- mean_par[complete.cases(mean_par),]
   
   var_par <- lapply(names(idx_list), function(b) {
   idx <- idx_list[[b]]
@@ -164,7 +165,8 @@ scdesign3 <- function(args) {
   )
   })
   var_par <- do.call(rbind, var_par)
-  
+  var_par <- var_par[complete.cases(mean_par),]
+							   
   return(list(obj=seurat.obj, mean_par = mean_par, var_par = var_par))
 }
 
