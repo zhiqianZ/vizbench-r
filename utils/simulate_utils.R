@@ -165,7 +165,7 @@ scdesign3 <- function(args) {
   )
   })
   var_par <- do.call(rbind, var_par)
-  var_par <- var_par[complete.cases(mean_par),]
+  var_par <- var_par[complete.cases(var_par),]
 							   
   return(list(obj=seurat.obj, mean_par = mean_par, var_par = var_par))
 }
