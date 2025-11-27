@@ -84,7 +84,7 @@ FastMNNIntegration <- function(
 
 
 labels_new <- function(object, values, select = c("first", "last", "common", "all"), simplify = TRUE, ...) {
-  print("Using new labels")
+  message("Using new labels")
   select <- select[1L]
   select <- match.arg(arg = select)
   values <- intersect(values, rownames(object))
