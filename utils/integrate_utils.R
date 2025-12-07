@@ -258,8 +258,8 @@ SeuratCCA = function(args){
     x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = nhvgs)
     })
     anchors <- FindIntegrationAnchors(object.list = so, dims = 1:npcs)
-    integrated <- IntegrateData(anchorset = anchors, dims = 1:npcs)
-    DefaultAssay(integrated) <- "integrated"
+    integrated <- IntegrateData(anchorset = anchors, dims = 1:npcs, new.assay.name = "cca")
+    DefaultAssay(integrated) <- "cca"
     integrated <- ScaleData(integrated, verbose = FALSE)
     integrated <- RunPCA(integrated, npcs = npcs, verbose = FALSE, reduction.name = "integrated")
   }else{
