@@ -245,6 +245,39 @@ SeuratCCA = function(args){
   return(so)
 }
 
+SeuratCCA = function(args){
+  message("Running Seurat CCAv4")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  if(norm_method != "sctransform"){
+    so <- SplitObject(so, split.by = "batch")
+    so <- lapply(X = so, FUN = function(x) {
+    x <- NormalizeData(x)
+    x <- FindVariableFeatures(x, selection.method = "vst", nfeatures = nhvgs)
+    })
+    anchors <- FindIntegrationAnchors(object.list = so, dims = 1:npcs)
+    integrated <- IntegrateData(anchorset = anchors, dims = 1:npcs)
+    DefaultAssay(integrated) <- "integrated"
+    integrated <- ScaleData(integrated, verbose = FALSE)
+    integrated <- RunPCA(integrated, npcs = npcs, verbose = FALSE, reduction.name = "integrated")
+  }else{
+    hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    VariableFeatures(so) <- hvgs
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
+    so = IntegrateLayers(
+       object = so, method = CCAIntegration,
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+    )
+  }
+  return(integrated)
+}
+                
 fastMNN = function(args) {
   message("Running FastMNN")
   nhvgs <- args$nhvgs
