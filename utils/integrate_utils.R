@@ -10,136 +10,6 @@ load_pkgs <- function() {
   library(rjson)
 }
 
-FastMNNIntegration <- function(
-    object,
-    assay = NULL,
-    orig = NULL,
-    groups = NULL,
-    layers = NULL,
-    scale.layer = NULL,
-    features = 2000,
-    new.reduction = "integrated.mnn",
-    reduction.key = "mnn_",
-    reconstructed.assay = "mnn.reconstructed",
-    verbose = TRUE,
-    ...
-) {
-  print("new fastmnn")
-  object <- CreateSeuratObject(object)
-  if (is.numeric(x = features)) {
-    if (verbose) {
-      message(paste("Computing", features, "integration features"))
-    }
-    features <- SelectIntegrationFeatures5(object = object, features = features)
-  }
-  if(assay == "SCT"){
-    layers <- layers %||% Layers(object, search = "scale.data")  # change to scale.data for sctransform
-  }else{
-    layers <- layers %||% Layers(object, search = "data")
-  }
-  if (verbose) {
-    message("Converting layers to SingleCellExperiment")
-  }
-  objects.sce <- lapply(
-    X = layers,
-    FUN = function(x, f) {
-      return(as.SingleCellExperiment(
-        x = subset(x = object,
-                   features = f,
-                   cells = colnames(LayerData(object, layer = x)))
-      )
-      )
-    },
-    f = features
-  )
-  if (verbose) {
-    message("Running fastMNN")
-  }
-  out <- do.call(
-    what = batchelor::fastMNN,
-    args = c(
-      objects.sce,
-      list(...)
-    )
-  )
-  colnames(x = SingleCellExperiment::reducedDim(x = out)) <- paste0(reduction.key, 1:ncol(x = SingleCellExperiment::reducedDim(x = out)))
-  reduction <- CreateDimReducObject(
-    embeddings = SingleCellExperiment::reducedDim(x = out),
-    loadings = as.matrix(SingleCellExperiment::rowData(x = out)),
-    assay = DefaultAssay(object = object),
-    key = reduction.key
-  )
-  # Add reconstructed matrix (gene x cell)
-  reconstructed_assay <- CreateAssayObject(
-    data = as.matrix(SummarizedExperiment::assay(x = out)),
-  )
-  # Add variable features
-  VariableFeatures(object = reconstructed_assay) <- features
-  #Tool(object = object) <- S4Vectors::metadata(x = out)
-  #object <- LogSeuratCommand(object = object)
-  output.list <- list(reduction, reconstructed_assay)
-  names(output.list) <- c(new.reduction, reconstructed.assay)
-  return(output.list)
-}
-
-
-RunCCA.default2 <- function(
-  object1,
-  object2,
-  standardize = TRUE,
-  num.cc = 20,
-  seed.use = 42,
-  verbose = FALSE,
-  ...
-) {
-  print("new")
-  if (!is.null(x = seed.use)) {
-    set.seed(seed = seed.use)
-  }
-  cells1 <- colnames(x = object1)
-  cells2 <- colnames(x = object2)
-  print("here1")
-  message("here1")
-  if (standardize) {
-    print("here2")
-    message("here2")
-    object1 <- Standardize(mat = object1, display_progress = FALSE)
-    object2 <- Standardize(mat = object2, display_progress = FALSE)
-  }
-  print("here3")
-  message("here3")
-  mat3 <- crossprod(x = object1, y = object2)
-  print("here4")
-  message("here4")
-  print(dim(mat3))
-  message(dim(mat3))
-  cca.svd <- irlba(A = mat3, nv = num.cc)
-  print("here5")
-  message("here5")
-  cca.data <- rbind(cca.svd$u, cca.svd$v)
-  colnames(x = cca.data) <- paste0("CC", 1:num.cc)
-  rownames(cca.data) <- c(cells1, cells2)
-  print("here6")
-  message("here6")
-  cca.data <- apply(
-    X = cca.data,
-    MARGIN = 2,
-    FUN = function(x) {
-      if (sign(x[1]) == -1) {
-        x <- x * -1
-      }
-      return(x)
-    }
-  )
-  print("here7")
-  message("here7")
-  return(list(ccv = cca.data, d = cca.svd$d))
-}
-
-godmode:::assignAnywhere("RunCCA.default", RunCCA.default2)
-getFromNamespace("RunCCA.default", "Seurat")
-godmode:::assignAnywhere("FastMNNIntegration", FastMNNIntegration)
-
                 
 find_hvgs_seuratv5 <- function(seurat.obj, nfeatures = 2000) {
   seurat.obj <- FindVariableFeatures(seurat.obj,
@@ -244,6 +114,61 @@ SeuratCCA = function(args){
 }
 
 SeuratCCA = function(args){
+  RunCCA.default2 <- function(
+  object1,
+  object2,
+  standardize = TRUE,
+  num.cc = 20,
+  seed.use = 42,
+  verbose = FALSE,
+  ...
+) {
+  print("new")
+  if (!is.null(x = seed.use)) {
+    set.seed(seed = seed.use)
+  }
+  cells1 <- colnames(x = object1)
+  cells2 <- colnames(x = object2)
+  print("here1")
+  message("here1")
+  if (standardize) {
+    print("here2")
+    message("here2")
+    object1 <- Standardize(mat = object1, display_progress = FALSE)
+    object2 <- Standardize(mat = object2, display_progress = FALSE)
+  }
+  print("here3")
+  message("here3")
+  mat3 <- crossprod(x = object1, y = object2)
+  print("here4")
+  message("here4")
+  print(dim(mat3))
+  message(dim(mat3))
+  cca.svd <- irlba(A = mat3, nv = num.cc)
+  print("here5")
+  message("here5")
+  cca.data <- rbind(cca.svd$u, cca.svd$v)
+  colnames(x = cca.data) <- paste0("CC", 1:num.cc)
+  rownames(cca.data) <- c(cells1, cells2)
+  print("here6")
+  message("here6")
+  cca.data <- apply(
+    X = cca.data,
+    MARGIN = 2,
+    FUN = function(x) {
+      if (sign(x[1]) == -1) {
+        x <- x * -1
+      }
+      return(x)
+    }
+  )
+  print("here7")
+  message("here7")
+  return(list(ccv = cca.data, d = cca.svd$d))
+}
+godmode:::assignAnywhere("RunCCA.default", RunCCA.default2)
+getFromNamespace("RunCCA.default", "Seurat")
+  
   message("Running Seurat CCAv4")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
