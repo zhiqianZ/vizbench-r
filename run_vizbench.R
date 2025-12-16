@@ -134,9 +134,7 @@ message("info: ", paste0(names(info),"=",info,collapse=";"))
 if(args$what %in% c("integratenorm", "integrateraw")){
   args$what = "integrate"
 }
-
-options(future.globals.maxSize = 2000 * 1024^3)
-
+options(future.globals.maxSize= 10^20)
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
 if( file.exists(helpers) ) {
