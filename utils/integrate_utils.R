@@ -83,7 +83,7 @@ FastMNNIntegration <- function(
 }
 
 
-RunCCA.default <- function(
+RunCCA.default2 <- function(
   object1,
   object2,
   standardize = TRUE,
@@ -113,8 +113,6 @@ RunCCA.default <- function(
   message("here4")
   print(dim(mat3))
   message(dim(mat3))
-  saveRDS(mat3, "mat3.rds")
-  message("done")
   cca.svd <- irlba(A = mat3, nv = num.cc)
   print("here5")
   message("here5")
@@ -138,7 +136,8 @@ RunCCA.default <- function(
   return(list(ccv = cca.data, d = cca.svd$d))
 }
 
-godmode:::assignAnywhere("RunCCA.default", RunCCA.default)
+godmode:::assignAnywhere("RunCCA.default", RunCCA.default2)
+getFromNamespace("RunCCA.default", "Seurat")
 godmode:::assignAnywhere("FastMNNIntegration", FastMNNIntegration)
 
                 
@@ -209,6 +208,7 @@ SeuratRPCA = function(args){
 
 SeuratCCA = function(args){
   message("Running Seurat CCA")
+  getFromNamespace("RunCCA.default", "Seurat")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
   norm_method <- read_normmethod(args$normalize.json)
