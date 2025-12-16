@@ -8,6 +8,7 @@ load_pkgs <- function() {
   library(dplyr)
   library(anndataR)
   library(rjson)
+  library(irlba)
 }
 
 RunCCA.default2 <- function(
@@ -20,6 +21,7 @@ RunCCA.default2 <- function(
   ...
 ) {
   print("new")
+  Standardize = getFromNamespace("Standardize", "Seurat")
   if (!is.null(x = seed.use)) {
     set.seed(seed = seed.use)
   }
