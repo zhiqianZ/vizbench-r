@@ -168,17 +168,21 @@ SeuratCCA = function(args){
 }
 
 SeuratCCA = function(args){
-  print(getOption("future.globals.maxSize"))
-  message(getOption("future.globals.maxSize"))
-  options(future.globals.maxSize = 5000 * 1024^3)
-  print(getOption("future.globals.maxSize"))
-  message(getOption("future.globals.maxSize"))  
+  
   ns <- asNamespace("Seurat")
   if (bindingIsLocked("RunCCA.default", ns)) unlockBinding("RunCCA.default", ns)
   assign("RunCCA.default", RunCCA.default2, envir = ns)
   lockBinding("RunCCA.default", ns)
   registerS3method("RunCCA", "default", RunCCA.default2, envir = ns)
   
+  if (requireNamespace("RhpcBLASctl", quietly = TRUE)) {
+    message(RhpcBLASctl::blas_get_num_procs())
+    message(RhpcBLASctl::omp_get_max_threads())
+    RhpcBLASctl::blas_set_num_threads(255)
+    RhpcBLASctl::omp_set_num_threads(255)
+  }
+  message(RhpcBLASctl::blas_get_num_procs())
+  message(RhpcBLASctl::omp_get_max_threads())
   message("Running Seurat CCAv4")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
