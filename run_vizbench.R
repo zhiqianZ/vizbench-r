@@ -136,10 +136,10 @@ if(args$what %in% c("integratenorm", "integrateraw")){
 }
 
 options(future.globals.maxSize= 10^20)
-Set_Threads_BLAS_OMP()
-
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
+Set_Threads_BLAS_OMP()
+
 if( file.exists(helpers) ) {
   message("Sourcing .. ", helpers)
   source(helpers)
