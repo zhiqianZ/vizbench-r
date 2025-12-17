@@ -131,43 +131,6 @@ SeuratRPCA = function(args){
 }
 
 SeuratCCA = function(args){
-  message("Running Seurat CCA")
-  getFromNamespace("RunCCA.default", "Seurat")
-  nhvgs <- args$nhvgs
-  npcs <- args$npcs
-  norm_method <- read_normmethod(args$normalize.json)
-  so <- read_seurat(args$normalize.ad)
-  if(norm_method != "sctransform"){
-    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
-    hvgs <- find_hvgs_seuratv5(so, nhvgs)
-    VariableFeatures(so) <- hvgs
-    so <- ScaleData(so)
-    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
-    so = IntegrateLayers(
-       object = so, method = CCAIntegration,
-       orig.reduction = "pca", new.reduction = "integrated",
-       verbose = TRUE,
-       dims = 1:npcs,
-       features = VariableFeatures(so)
-     ) 
-  }else{
-    hvgs <- rownames(so)
-    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
-    VariableFeatures(so) <- hvgs
-    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
-    so = IntegrateLayers(
-       object = so, method = CCAIntegration,
-       orig.reduction = "pca", new.reduction = "integrated",
-       verbose = TRUE,
-       dims = 1:npcs,
-       features = VariableFeatures(so)
-    )
-  }
-  so <- JoinLayers(so)
-  return(so)
-}
-
-SeuratCCA = function(args){
   
   ns <- asNamespace("Seurat")
   if (bindingIsLocked("RunCCA.default", ns)) unlockBinding("RunCCA.default", ns)
@@ -214,7 +177,58 @@ SeuratCCA = function(args){
   }
   return(integrated)
 }
-                
+
+SeuratCCA = function(args){
+  ns <- asNamespace("Seurat")
+  if (bindingIsLocked("RunCCA.default", ns)) unlockBinding("RunCCA.default", ns)
+  assign("RunCCA.default", RunCCA.default2, envir = ns)
+  lockBinding("RunCCA.default", ns)
+  registerS3method("RunCCA", "default", RunCCA.default2, envir = ns)
+  
+  if (requireNamespace("RhpcBLASctl", quietly = TRUE)) {
+    message(RhpcBLASctl::blas_get_num_procs())
+    message(RhpcBLASctl::omp_get_max_threads())
+    RhpcBLASctl::blas_set_num_threads(255)
+    RhpcBLASctl::omp_set_num_threads(255)
+  }
+  message(RhpcBLASctl::blas_get_num_procs())
+  message(RhpcBLASctl::omp_get_max_threads())
+  message("Running Seurat CCA")
+  getFromNamespace("RunCCA.default", "Seurat")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  so <- read_seurat(args$normalize.ad)
+  if(norm_method != "sctransform"){
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    hvgs <- find_hvgs_seuratv5(so, nhvgs)
+    VariableFeatures(so) <- hvgs
+    so <- ScaleData(so)
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
+    so = IntegrateLayers(
+       object = so, method = CCAIntegration,
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+     ) 
+  }else{
+    hvgs <- rownames(so)
+    so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
+    VariableFeatures(so) <- hvgs
+    so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
+    so = IntegrateLayers(
+       object = so, method = CCAIntegration,
+       orig.reduction = "pca", new.reduction = "integrated",
+       verbose = TRUE,
+       dims = 1:npcs,
+       features = VariableFeatures(so)
+    )
+  }
+  so <- JoinLayers(so)
+  return(so)
+}
+
 fastMNN = function(args) {
   message("Running FastMNN")
   nhvgs <- args$nhvgs
