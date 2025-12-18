@@ -17,7 +17,7 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 # define arguments
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
-                                "integratenorm", "integrateraw", "visualize", "metric"),
+                                "integrate", "visualize", "metric"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
@@ -131,9 +131,9 @@ info <- Sys.info()
 message("info: ", paste0(names(info),"=",info,collapse=";"))
 
 
-if(args$what %in% c("integratenorm", "integrateraw")){
-  args$what = "integrate"
-}
+#if(args$what %in% c("integratenorm", "integrateraw")){
+#  args$what = "integrate"
+#}
 
 options(future.globals.maxSize= 10^20)
 # source common helper functions
