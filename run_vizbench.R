@@ -95,11 +95,19 @@ parser$add_argument('--normalize.json',
                     type="character",
                     help='JSON file containing name of normalization method')
 
-parser$add_argument('--integrate.ad',
+parser$add_argument('--integrate_normalize.ad',
                     type="character",
                     help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
 
-parser$add_argument('--visualize.csv.gz',
+parser$add_argument('--visualize_normalize.csv.gz',
+                    type="character",
+                    help='gz-compressed CSV file containing embeddings')
+
+parser$add_argument('--integrate_count.ad',
+                    type="character",
+                    help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
+
+parser$add_argument('--visualize_count.csv.gz',
                     type="character",
                     help='gz-compressed CSV file containing embeddings')
 
