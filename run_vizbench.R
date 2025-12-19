@@ -17,7 +17,8 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 # define arguments
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
-                                "integrate", "visualize", "metric"),
+                                "integrate_normalize", "visualize_normalize",
+                                "integrate_count", "visualize_count", "metric"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
@@ -130,11 +131,6 @@ message("libPaths: ", paste0(.libPaths(),collapse=";"))
 info <- Sys.info()
 message("info: ", paste0(names(info),"=",info,collapse=";"))
 
-
-#if(args$what %in% c("integratenorm", "integrateraw")){
-#  args$what = "integrate"
-#}
-
 options(future.globals.maxSize= 10^20)
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
@@ -150,8 +146,8 @@ if( file.exists(helpers) ) {
 use_python(args$py_path)
 
 # source normalization python helper functions
-if (args$what %in% c("normalize", "visualize")) {
-  helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.py"))
+if (sub("_.*$", "", args$what) %in% c("normalize", "visualize")) {
+  helpers <- file.path(run_dir, "utils", paste0(sub("_.*$", "", args$what), "_utils.py"))
   if( file.exists(helpers) ) {
     message("Sourcing .. ", helpers)
     source_python(helpers, convert = FALSE)
@@ -165,7 +161,7 @@ if(args$flavour == "FItSNE"){
 }
 
 # source stage-specific helper functions (n.b.: according to args$what)
-helpers <- file.path(run_dir, "utils", paste0(args$what, "_utils.R"))
+helpers <- file.path(run_dir, "utils", paste0(sub("_.*$", "", args$what), "_utils.R"))
 if( file.exists(helpers) ) {
     message("Sourcing .. ", helpers)
     source(helpers)
@@ -194,7 +190,7 @@ if ( !("error" %in% class(fun)) ) {
 }
 
 # write to AnnData via anndataR
-if (args$what %in% c("rawdata", "simulate", "normalize", "integrate")) {
+if (sub("_.*$", "", args$what) %in% c("rawdata", "simulate", "normalize", "integrate")) {
   # here, always writing data files as AD (HDF5)
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
   if(typeof(x)!="environment"){
@@ -210,7 +206,7 @@ if(args$what == "normalize") {
   write(toJSON(list(normalize=args$flavour)), fn)
 }
                 
-if(args$what == "integrate"){
+if(sub("_.*$", "", args$what) == "integrate"){
   fn <- file.path(args$output_dir, paste0(args$name, args$what, ".json"))
   write(toJSON(list(intgrate=args$flavour)), fn)
 }
@@ -222,10 +218,10 @@ if(args$what == "simulate"){
   write_csv(as.data.frame(var_par), file = fn)
 }
                 
-if(args$what == "visualize") {
+if(sub("_.*$", "", args$what) == "visualize") {
   # here, write embeddings to gzipped CSV file
   fn <- gzfile(file.path(args$output_dir, 
-                         paste0(args$name, "_visualize", ".csv.gz")))
+                         paste0(args$name, "_", args$what, ".csv.gz")))
   if(!args$flavour %in% c("scanpyUMAP","graphFA")){
     write_csv(as.data.frame(x), file = fn)
   }else{
