@@ -183,6 +183,13 @@ suppressPackageStartupMessages(load_pkgs())
 
 # check if implemented: throw error if not; run if so
 # n.b.: args$flavour defines what 'main' function to call
+if (sub("_.*$", "", args$what) == "visualize"){
+  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
+}
+if (sub("_.*$", "", args$what) == "metric"){
+  args$visualize.ad = args[[paste0("visualize_",sub("^.*_", "", args$what), ".ad")]]
+}
+
 fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
     x <- fun(as.list(args)) # execute function 
