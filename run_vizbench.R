@@ -187,7 +187,7 @@ if (sub("_.*$", "", args$what) == "visualize"){
   args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
 }
 if (sub("_.*$", "", args$what) == "metric"){
-  args$visualize.ad = args[[paste0("visualize_",sub("^.*_", "", args$what), ".ad")]]
+  args$visualize.csv.gz = args[[paste0("visualize_",sub("^.*_", "", args$what), ".csv.gz")]]
 }
 
 fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
