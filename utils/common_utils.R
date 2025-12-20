@@ -31,25 +31,6 @@ Set_Threads_BLAS_OMP <- function(){
   message("== OpenMP / threading env ==")
   for (k in names(envs)) message(sprintf("  %s=%s", k, envs[[k]]))
   
-  ## == CPU quota / affinity ==
-  message("\n== CPU quota / affinity ==")
-  cores_detect <- tryCatch(parallel::detectCores(), error = function(e) NA_integer_)
-  message(sprintf("parallel::detectCores(): %s", cores_detect))
-  
-  cpuinfo <- tryCatch(readLines("/proc/cpuinfo"), error = function(e) character())
-  nproc_approx <- if (length(cpuinfo)) sum(grepl("^processor\\s*:", cpuinfo)) else NA_integer_
-  message(sprintf("nproc (approx): %s", nproc_approx))
-  
-  cpu_max <- tryCatch(readLines("/sys/fs/cgroup/cpu.max"), error = function(e) character())
-  message(sprintf("cgroup cpu.max: %s", if (length(cpu_max)) paste(cpu_max, collapse=" ") else "NA"))
-  
-  status <- tryCatch(readLines("/proc/self/status"), error = function(e) character())
-  allowed <- if (length(status)) sub("Cpus_allowed_list\\s*:\\s*", "", status[grep("^Cpus_allowed_list", status)]) else NA_character_
-  message(sprintf("Cpus_allowed_list: %s", if (is.na(allowed)) "NA" else allowed))
-  
-  aff <- tryCatch(system("taskset -pc $$ 2>/dev/null", intern = TRUE), error = function(e) character())
-  message(sprintf("taskset: %s", if (length(aff)) paste(aff, collapse=" ") else "unavailable"))
-  
   ## == R: BLAS & thread counts ==
   message("\n== R: BLAS & thread counts ==")
   blas_path <- unname(extSoftVersion()[["BLAS"]])
@@ -108,26 +89,7 @@ Set_Threads_BLAS_OMP <- function(){
   ), unset = NA_character_)
   message("== OpenMP / threading env ==")
   for (k in names(envs)) message(sprintf("  %s=%s", k, envs[[k]]))
-  
-  ## == CPU quota / affinity ==
-  message("\n== CPU quota / affinity ==")
-  cores_detect <- tryCatch(parallel::detectCores(), error = function(e) NA_integer_)
-  message(sprintf("parallel::detectCores(): %s", cores_detect))
-  
-  cpuinfo <- tryCatch(readLines("/proc/cpuinfo"), error = function(e) character())
-  nproc_approx <- if (length(cpuinfo)) sum(grepl("^processor\\s*:", cpuinfo)) else NA_integer_
-  message(sprintf("nproc (approx): %s", nproc_approx))
-  
-  cpu_max <- tryCatch(readLines("/sys/fs/cgroup/cpu.max"), error = function(e) character())
-  message(sprintf("cgroup cpu.max: %s", if (length(cpu_max)) paste(cpu_max, collapse=" ") else "NA"))
-  
-  status <- tryCatch(readLines("/proc/self/status"), error = function(e) character())
-  allowed <- if (length(status)) sub("Cpus_allowed_list\\s*:\\s*", "", status[grep("^Cpus_allowed_list", status)]) else NA_character_
-  message(sprintf("Cpus_allowed_list: %s", if (is.na(allowed)) "NA" else allowed))
-  
-  aff <- tryCatch(system("taskset -pc $$ 2>/dev/null", intern = TRUE), error = function(e) character())
-  message(sprintf("taskset: %s", if (length(aff)) paste(aff, collapse=" ") else "unavailable"))
-  
+    
   ## == R: BLAS & thread counts ==
   message("\n== R: BLAS & thread counts ==")
   blas_path <- unname(extSoftVersion()[["BLAS"]])
