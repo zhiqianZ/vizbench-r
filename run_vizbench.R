@@ -18,7 +18,7 @@ parser <- ArgumentParser(description = "Benchmarking entrypoint")
 parser$add_argument("--what", 
                     choices = c("rawdata", "simulate", "normalize", 
                                 "integrate_normalize", "visualize_normalize",
-                                "integrate_count", "visualize_count", "metric"),
+                                "integrate_count", "visualize_count", "metric_normalize", "metric_count"),
                     required = TRUE, 
                     help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
 
