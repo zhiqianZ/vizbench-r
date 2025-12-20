@@ -139,6 +139,17 @@ message("libPaths: ", paste0(.libPaths(),collapse=";"))
 info <- Sys.info()
 message("info: ", paste0(names(info),"=",info,collapse=";"))
 
+# check if implemented: throw error if not; run if so
+# n.b.: args$flavour defines what 'main' function to call
+if (sub("_.*$", "", args$what) == "visualize"){
+  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
+}
+if (sub("_.*$", "", args$what) == "metric"){
+  args$visualize.csv.gz = args[[paste0("visualize_",sub("^.*_", "", args$what), ".csv.gz")]]
+  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
+}
+
+##### Source file #####
 options(future.globals.maxSize= 10^20)
 # source common helper functions
 helpers <- file.path(run_dir, "utils", "common_utils.R")
@@ -178,19 +189,10 @@ if( file.exists(helpers) ) {
     quit("no", status = 1)
 } 
 
-# load packages
+##### Load packages #####
 suppressPackageStartupMessages(load_pkgs())
 
-# check if implemented: throw error if not; run if so
-# n.b.: args$flavour defines what 'main' function to call
-if (sub("_.*$", "", args$what) == "visualize"){
-  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
-}
-if (sub("_.*$", "", args$what) == "metric"){
-  args$visualize.csv.gz = args[[paste0("visualize_",sub("^.*_", "", args$what), ".csv.gz")]]
-  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
-}
-
+##### Run #####
 fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
 if ( !("error" %in% class(fun)) ) {
     x <- fun(as.list(args)) # execute function 
@@ -205,6 +207,7 @@ if ( !("error" %in% class(fun)) ) {
     quit("no", status = 1)
 }
 
+##### Save #####
 # write to AnnData via anndataR
 if (sub("_.*$", "", args$what) %in% c("rawdata", "simulate", "normalize", "integrate")) {
   # here, always writing data files as AD (HDF5)
