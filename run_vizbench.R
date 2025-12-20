@@ -244,7 +244,7 @@ if(sub("_.*$", "", args$what) == "visualize") {
     x_R <- py_to_r(x)
     write.csv(x_R, fn, row.names = FALSE)
   }
-} else if (args$what == "metric") {
+} else if (sub("_.*$", "", args$what) == "metric") {
   # 'x' is something here
   fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
   write(toJSON(list(value=x)), fn)
