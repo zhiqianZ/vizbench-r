@@ -21,7 +21,7 @@ read_normmethod <- function(f) fromJSON(paste(readLines(f),
 read_hvgs <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$hvgs
 
-Set_Threads_BLAS_OMP <- function(n = 255, init_python = FALSE, verbose = TRUE) {
+Set_Threads_BLAS_OMP <- function(n = 255, init_python = TRUE, verbose = TRUE) {
   # Goal:
   # 1) Set *process env vars* that BOTH R and embedded Python (reticulate) can see.
   # 2) Set R-side thread pools (RhpcBLASctl, data.table).
