@@ -2,6 +2,7 @@ import scanpy as sc
 import anndata as ad
 import numpy as np
 import scipy as sp
+import os
 
 def scanpyUMAP(args):
   print("Running scanpyUMAP")
@@ -15,6 +16,17 @@ def scanpyUMAP(args):
     
 def graphFA(args):
   print("Running graphFA")
+  print("== Environment thread variables ==")
+  for k in [
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "OMP_DYNAMIC",
+    "MKL_DYNAMIC",
+  ]:
+    print(f"{k} = {os.getenv(k)}")
   adata_path = args["integrate.ad"]
   npcs = args['npcs']
   adata = sc.read_h5ad(adata_path)
