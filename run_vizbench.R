@@ -149,6 +149,8 @@ if (sub("_.*$", "", args$what) == "metric"){
   args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
 }
 
+use_python(args$py_path)
+
 ##### Source file #####
 options(future.globals.maxSize= 10^20)
 # source common helper functions
@@ -161,8 +163,6 @@ if( file.exists(helpers) ) {
   message(paste0("Helper code in ", helpers, " not found. Exiting."))
   quit("no", status = 1)
 }
-
-use_python(args$py_path)
 
 # source normalization python helper functions
 if (sub("_.*$", "", args$what) %in% c("normalize", "visualize")) {
