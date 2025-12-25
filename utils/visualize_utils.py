@@ -13,7 +13,7 @@ def scanpyUMAP(args):
   sc.tl.umap(adata)
   return adata.obsm['X_umap']
   
-    
+"""
 def graphFA(args):
   print("Running graphFA")
   print("== Environment thread variables ==")
@@ -33,4 +33,4 @@ def graphFA(args):
   sc.pp.neighbors(adata, n_pcs=npcs, use_rep = "integrated")
   sc.tl.draw_graph(adata)
   return adata.obsm['X_draw_graph_fa']
-  
+  """
