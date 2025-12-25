@@ -85,7 +85,8 @@ PHATE = function(args){
 
 graphFA = function(args){
   print("Running graphFA")
-  
+  ad = import("anndata")
+  sc = import("scanpy", convert=F)
   fn = args$integrate.ad
   so <- read_seurat(fn)
   npcs <- args$npcs
