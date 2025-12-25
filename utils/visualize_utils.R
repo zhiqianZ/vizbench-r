@@ -71,7 +71,7 @@ denSNE = function(args){
   return(vis)
 }
 
-PHATE = function(seurat.obj, n.pcs=50, n.cores=5){
+PHATE = function(args){
   message("Running PHATE")
   fn = args$integrate.ad
   so <- read_seurat(fn)
@@ -83,6 +83,27 @@ PHATE = function(seurat.obj, n.pcs=50, n.cores=5){
   return(vis)
 }
 
+graphFA = function(args){
+  print("Running graphFA")
+  
+  fn = args$integrate.ad
+  so <- read_seurat(fn)
+  npcs <- args$npcs
+  nthreads <- args$nthreads
+  
+  temp_count = matrix(0, nrow = ncol(so), ncol = nrow(so))
+  adata = sc$AnnData(temp_count)
+  latent.method.key = "X_integrated"
+  adata$obsm[latent.method.key] = Embeddings(so,"integrated")[,1:npcs]
+  message("finding neighbors")
+  sc$pp$neighbors(adata,use_rep=latent.method.key, n_pcs=as.integer(npcs))
+  message("starting layouts")
+  sc$tl$draw_graph(adata,layout="fa",n_jobs=as.integer(nthreads))
+  message("done")
+  vis = as.matrix(adata$obsm$get('X_draw_graph_fa'))
+  rownames(vis) = colnames(so)
+  return(vis)
+}
 
 
 
