@@ -7,6 +7,7 @@ load_pkgs <- function() {
   library(GEOquery)
   library(R.utils)
   library(here)
+  library(zellkonverter)
 }
 
 mouse_pancreas <- function(args) {
@@ -32,7 +33,38 @@ mouse_pancreas <- function(args) {
   return(sce_save)
 }
 
-
+human_IFALD_liver <- function(args) {
+  ### single-cell atlas of human pediatric liver (health and IFALD [intestinal failure–associated liver disease])
+  url = "https://datasets.cellxgene.cziscience.com/feca90bb-00df-4623-8398-1e3e6a90971d.h5ad"
+  temp_h5ad <- tempfile(fileext = ".h5ad")
+  options(timeout = 3600)
+  download.file(url, destfile = temp_h5ad, mode = "wb")
+  sce <- readH5AD(
+    file = temp_h5ad, 
+    X_name = "logcounts", 
+    raw = TRUE
+  )
+  sce_raw <- as(SingleCellExperiment::altExp(sce, "raw"), "SingleCellExperiment")
+  assayNames(sce_raw)[assayNames(sce_raw) == "X"] <- "counts"
+  raw_values <- counts(sce_raw)
+  is_integer <- all(raw_values == round(raw_values))
+  
+  if (is_integer) {
+    message("The 'counts' assay contains only integers.")
+  } else {
+    warning("Warning: The 'counts' assay contains decimals. This data is likely already normalized.")
+  }
+  common_cells <- intersect(colnames(sce), colnames(sce_raw))
+  sce_raw <- sce_raw[,common_cells]
+  colData(sce_raw) <- colData(sce)[colnames(sce_raw),]
+  colData(sce_raw)$celltype = colData(sce_raw)$cell_type
+  colData(sce_raw)$batch = colData(sce_raw)$donor_id
+  colData(sce_raw)$condition = colData(sce_raw)$disease
+  sce_raw = sce_raw[,sce_raw$celltype != "unkown"]
+  file.remove(temp_h5ad)
+  return(sce_raw)
+}
+				 
 ### huamn pancreas GSM2230757,GSM2230758,GSM2230759,GSM2230760
 # file = c("GSM2230757","GSM2230758","GSM2230759","GSM2230760")
 # data = lapply(1:4, function(x){
