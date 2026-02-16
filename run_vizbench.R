@@ -27,7 +27,7 @@ parser$add_argument("--what",
 # TODO: add subparser?
 
 parser$add_argument("--flavour", 
-                    choices = c("mouse_pancreas",                                                                                    # raw data
+                    choices = c("mouse_pancreas", "human_IFALD_liver",                                                                                  # raw data
                                 "scdesign3",                                                                                         # simulate
                                 "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "sanity",          # normalize
                                 "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                                    # integrate
