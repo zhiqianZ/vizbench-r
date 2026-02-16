@@ -87,8 +87,8 @@ scdesign3 <- function(args) {
     family_use = "nb",
     n_cores = nthreads,
     usebam = FALSE,
-    #parallelization = "mcmapply",
-    parallelization = "pbmcmapply",
+    parallelization = "mcmapply",
+    #parallelization = "pbmcmapply",
     trace = TRUE
   )
   para <- extract_para(
