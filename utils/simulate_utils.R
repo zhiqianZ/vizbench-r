@@ -49,16 +49,30 @@ scdesign3 <- function(args) {
                               colData = coldat)
 
   set.seed(123)
-  data <- construct_data(
-    sce = sce,
-    assay_use = "counts",
-    celltype = "celltype",
-    pseudotime = NULL,
-    spatial = NULL,
-    other_covariates = "batch",
-    corr_by = "celltype",
-    ncell = ncells
-  )
+  message(colnames(colData(sce)))
+  if("condition" %in% colnames(colData(sce))){
+	  data <- construct_data(
+		  sce = sce,
+		  assay_use = "counts",
+		  celltype = "celltype",
+		  pseudotime = NULL,
+		  spatial = NULL,
+		  other_covariates = c("batch", "condition"),
+		  corr_by = "celltype",
+		  ncell = ncells
+	  )
+  }else{
+	  data <- construct_data(
+		  sce = sce,
+    	  assay_use = "counts",
+    	  celltype = "celltype",
+    	  pseudotime = NULL,
+    	  spatial = NULL,
+		  other_covariates = "batch",
+		  corr_by = "celltype",
+		  ncell = ncells
+	  )
+  }
   
   if(args$verbose) message(mean(data$count_mat>0))
   if(args$verbose) message(paste0(dim(data$count_mat), collapse=","))
