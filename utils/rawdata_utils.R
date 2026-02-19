@@ -60,6 +60,9 @@ human_IFALD_liver <- function(args) {
   colData(sce_raw)$celltype = colData(sce_raw)$cell_type
   colData(sce_raw)$batch = colData(sce_raw)$donor_id
   colData(sce_raw)$condition = colData(sce_raw)$disease
+  cond <- as.character(colData(sce_raw)$condition)
+  cond[cond != "normal"] <- "intestinal failure-associated liver disease"
+  colData(sce_raw)$condition <- cond
   sce_raw = sce_raw[,sce_raw$celltype != "unkown"]
   file.remove(temp_h5ad)
   return(sce_raw)
