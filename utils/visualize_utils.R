@@ -110,11 +110,23 @@ SeuratUMAP_scDEED = function(args){
   npcs <- args$npcs
   nthreads <- args$nthreads
   fn = args$integrate.ad
-  so <- read_seurat(fn)
+  so_origin <- read_seurat(fn)
+  set.seed(1000)
+  so = so_origin[, sample(1:ncol(so_origin), 30000)]
+
   pre_embedding = 'integrated'
   integrated_space = Embeddings(so, pre_embedding)
   permuted_space = integrated_space
-  set.seed(1000)
+
+
+  for (i in 1:dim(integrated_space)[2]){
+    row = randperm(dim(permuted_space)[1])
+    permuted_space[,i]=integrated_space[row,i]
+  }
+  so.permuted = so
+  so.permuted[[pre_embedding]] <- CreateDimReducObject(embeddings = permuted_space , key = "integrated_", assay = DefaultAssay(so.permuted))
+  start = Sys.time()
+  result = scDEED(so, K = npcs, pre_embedding = pre_embedding, permuted = so.permuted, reduction.method = 'umap')
   for (i in 1:dim(integrated_space)[2]){
     row = randperm(dim(permuted_space)[1])
     permuted_space[,i]=integrated_space[row,i]
@@ -126,11 +138,11 @@ SeuratUMAP_scDEED = function(args){
 
   n.neighbors = result$num_dubious[which.min(result$num_dubious$number_dubious_cells), "n_neighbors"]
   min.dist = result$num_dubious[which.min(result$num_dubious$number_dubious_cells), "min.dist"]
-
-  so = RunUMAP(so, dims = 1:50, reduction="integrated", umap.method = "umap-learn",
+  rm(so, so.permuted)
+  so_origin = RunUMAP(so_origin, dims = 1:50, reduction="integrated", umap.method = "umap-learn",
                min.dist = min.dist, n.neighbors = n.neighbors)
   
-  Embeddings(so, "umap")
+  Embeddings(so_origin, "umap")
 }
 
 BHtSNE_scDEED = function(args){
@@ -138,8 +150,10 @@ BHtSNE_scDEED = function(args){
   npcs <- args$npcs
   nthreads <- args$nthreads
   fn = args$integrate.ad
-  so <- read_seurat(fn)
-  
+  so_origin <- read_seurat(fn)
+  set.seed(1000)
+  so = so_origin[, sample(1:ncol(so_origin), 10000)]
+
   pre_embedding = 'integrated'
   integrated_space = Embeddings(so, pre_embedding)
   permuted_space = integrated_space
@@ -154,12 +168,12 @@ BHtSNE_scDEED = function(args){
   result = scDEED(so, K = npcs, pre_embedding = pre_embedding, permuted = so.permuted, reduction.method = 'tsne')
 
   perlexity = result$num_dubious[which.min(result$num_dubious$number_dubious_cells), "perplexity"]
-
-  so = RunTSNE(so, dims = 1:npcs, reduction="integrated", 
+  rm(so, so.permuted)
+  so_origin = RunTSNE(so_origin, dims = 1:npcs, reduction="integrated", 
                perplexity = perplexity,
                tsne.method = "Rtsne", check_duplicates = FALSE,
                num_threads = nthreads)
-  Embeddings(so, "tsne")
+  Embeddings(so_origin, "tsne")
 }
 
 Distances.UMAP_mod = function(pbmc,pbmc.permuted, K, pre_embedding = 'pca', n = 30, m = 0.3, rerun = T) {
