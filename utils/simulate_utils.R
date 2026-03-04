@@ -116,6 +116,8 @@ scdesign3 <- function(args) {
     	  input_data = data$dat,
 		  parallelization = "pbmcmapply"
 	  )
+	  rm(marginal)
+	  gc()
 	  set.seed(123)
 	  message("Simulating new data")						   
 	  newcounts = simu_new(
@@ -136,6 +138,8 @@ scdesign3 <- function(args) {
 	  seurat.obj = CreateSeuratObject(newcounts, 
 				  meta.data=data$newCovariate)
   }else{
+	  rm(marginal)
+	  gc()
 	  seurat.obj = CreateSeuratObject(counts, 
 				  meta.data=coldat)
   }
