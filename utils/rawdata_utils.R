@@ -34,6 +34,7 @@ mouse_pancreas <- function(args) {
 }
 
 human_IFALD_liver <- function(args) {
+  options(timeout = 7200)
   ### https://cellxgene.cziscience.com/collections/ff69f0ee-fef6-4895-9f48-6c64a68c8289 
   url = "https://datasets.cellxgene.cziscience.com/feca90bb-00df-4623-8398-1e3e6a90971d.h5ad"
   temp_h5ad <- tempfile(fileext = ".h5ad")
@@ -68,6 +69,7 @@ human_IFALD_liver <- function(args) {
 }
 
 human_atheroma <- function(args) {
+  options(timeout = 7200)
   ### https://cellxgene.cziscience.com/collections/db70986c-7d91-49fe-a399-a4730be394ac
   ### therosclerotic plaque scRNAseq datasets
   url = "https://datasets.cellxgene.cziscience.com/3bab1c0b-d3e3-4a01-840f-d49a8284d989.h5ad"
@@ -101,6 +103,7 @@ human_atheroma <- function(args) {
 
 
 human_glaucoma_pbmc <- function(args) {
+  options(timeout = 7200)
   ### https://cellxgene.cziscience.com/collections/de2cde16-c8d3-4a6d-80be-1be9e879aaca
   url = "https://datasets.cellxgene.cziscience.com/06932380-c04d-4d11-b4af-22de62b031b4.h5ad"
 
@@ -132,6 +135,7 @@ human_glaucoma_pbmc <- function(args) {
 }
 				 
 human_covid_blood <- function(args) {
+  options(timeout = 7200)
   ### https://cellxgene.cziscience.com/collections/8f126edf-5405-4731-8374-b5ce11f53e82
   url = "https://datasets.cellxgene.cziscience.com/687c09ff-731a-4e3d-ac07-4c29c33a6338.h5ad"
   temp_h5ad <- tempfile(fileext = ".h5ad")
@@ -163,6 +167,7 @@ human_covid_blood <- function(args) {
 
 
 human_colorectal_liver <- function(args) {
+  options(timeout = 7200)
   ### https://cellxgene.cziscience.com/collections/be679cb1-35f0-46c9-9a2d-30691862a54a
   url = "https://datasets.cellxgene.cziscience.com/b425976f-9d73-4388-95dd-e7cd0f8caca0.h5ad"
   temp_h5ad <- tempfile(fileext = ".h5ad")
