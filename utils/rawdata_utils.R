@@ -301,6 +301,33 @@ human_liver = function(args){
   return(sce_save)
 }
 
+
+### mouse Cortex from scPSM figshare (https://figshare.com/articles/dataset/scPSM/19306661)  
+###				 (also in https://singlecell.broadinstitute.org/single_cell/study/SCP425/single-cell-comparison-cortex-data)  SCP425
+
+mouse_cortex = function(args){
+  download.file("https://figshare.com/ndownloader/files/34292060","mouse_cortex/mouse_cortex.zip")
+  unzip("mouse_cortex/mouse_cortex.zip",exdir="mouse_cortex")
+  cortex_expression_matrix <- readRDS("mouse_cortex/cortex_expression_matrix.rds")
+  cortex_metadata <- readRDS("mouse_cortex/cortex_metadata.rds")
+  ## only use experiment2
+  #exp2 = which(cortex_metadata$Experiment=="Cortex2")
+  coldata = cortex_metadata[exp2,]
+  no_smart_seq = which(coldata$Method != "Smart-seq2")
+  coldata = coldata[no_smart_seq,]
+  idx = which(colnames(coldata) == "CellType")
+  colnames(coldata)[idx] = "celltype"
+  idx = which(colnames(coldata) == "Method")
+  colnames(coldata)[idx] = "batch"
+  coldata$celltype = as.factor(coldata$celltype)
+  coldata$batch = as.factor(coldata$batch)
+  message("celltype:\n", paste(capture.output(table(coldata$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(coldata$batch)), collapse = "\n"))
+  count = cortex_expression_matrix[,rownames(coldata)]
+  sce = SingleCellExperiment(list(counts = count),colData = coldata)
+  sce 
+}
+				 
 				 
 
 
