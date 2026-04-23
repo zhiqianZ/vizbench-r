@@ -27,7 +27,9 @@ parser$add_argument("--what",
 # TODO: add subparser?
 
 parser$add_argument("--flavour", 
-                    choices = c("mouse_pancreas", "human_IFALD_liver", "human_atheroma", "human_covid_blood","human_glaucoma_pbmc", "human_colorectal_liver",                                                                                # raw data
+                    choices = c("mouse_pancreas", "human_IFALD_liver", "human_atheroma", "human_covid_blood","human_glaucoma_pbmc", "human_colorectal_liver", 
+                                "human_prefrontal_cortex", "human_lung_atlas", "human_liver_atlas","human_pbmc", "macaque_retina_fovea", "mouse_cortex",
+                                "mouse_intestine", "mouse_lung", "human_pancreas", "human_lung", # raw data
                                 "scdesign3",                                                                                         # simulate
                                 "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "sanity",          # normalize
                                 "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                                    # integrate
