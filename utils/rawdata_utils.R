@@ -64,6 +64,9 @@ human_IFALD_liver <- function(args) {
   cond[cond != "normal"] <- "intestinal failure-associated liver disease"
   colData(sce_raw)$condition <- cond
   sce_raw = sce_raw[,sce_raw$celltype != "unknown"]
+  message("celltype:\n", paste(capture.output(table(colData(sce_raw)$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(colData(sce_raw)$batch)), collapse = "\n"))
+  message("condtion:\n", paste(capture.output(table(colData(sce_raw)$condition)), collapse = "\n"))
   file.remove(temp_h5ad)
   return(sce_raw)
 }
@@ -97,6 +100,8 @@ human_atheroma <- function(args) {
   colData(sce_raw)$celltype = colData(sce_raw)$cell_type
   colData(sce_raw)$batch = colData(sce_raw)$donor_id
   # colData(sce_raw)$condition = colData(sce_raw)$disease
+  message("celltype:\n", paste(capture.output(table(colData(sce_raw)$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(colData(sce_raw)$batch)), collapse = "\n"))
   file.remove(temp_h5ad)
   return(sce_raw)
 }
@@ -130,6 +135,9 @@ human_glaucoma_pbmc <- function(args) {
   colData(sce_raw)$celltype = colData(sce_raw)$cell_type
   colData(sce_raw)$batch = colData(sce_raw)$donor_id
   colData(sce_raw)$condition = colData(sce_raw)$disease
+  message("celltype:\n", paste(capture.output(table(colData(sce_raw)$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(colData(sce_raw)$batch)), collapse = "\n"))
+  message("condtion:\n", paste(capture.output(table(colData(sce_raw)$condition)), collapse = "\n"))
   file.remove(temp_h5ad)
   return(sce_raw)
 }
@@ -161,6 +169,9 @@ human_covid_blood <- function(args) {
   colData(sce_raw)$celltype = colData(sce_raw)$cell_type
   colData(sce_raw)$batch = colData(sce_raw)$donor_id
   colData(sce_raw)$condition = colData(sce_raw)$disease
+  message("celltype:\n", paste(capture.output(table(colData(sce_raw)$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(colData(sce_raw)$batch)), collapse = "\n"))
+  message("condtion:\n", paste(capture.output(table(colData(sce_raw)$condition)), collapse = "\n"))
   file.remove(temp_h5ad)
   return(sce_raw)
 }
@@ -193,6 +204,9 @@ human_colorectal_liver <- function(args) {
   colData(sce_raw)$celltype = colData(sce_raw)$cell_type
   colData(sce_raw)$batch = colData(sce_raw)$donor_id
   colData(sce_raw)$condition = colData(sce_raw)$disease
+  message("celltype:\n", paste(capture.output(table(colData(sce_raw)$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(colData(sce_raw)$batch)), collapse = "\n"))
+  message("condtion:\n", paste(capture.output(table(colData(sce_raw)$condition)), collapse = "\n"))
   file.remove(temp_h5ad)
   return(sce_raw)
 }
@@ -210,8 +224,8 @@ human_lung <- function(args){
   head(coldata)
   coldata$celltype = as.factor(coldata$celltype)
   coldata$batch = as.factor(coldata$batch)
-  table(coldata$celltype)
-  table(coldata$batch)
+  message("celltype:\n", paste(capture.output(table(coldata$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(coldata$batch)), collapse = "\n"))
   sce = SingleCellExperiment(list(counts = count_mat), colData = coldata)
   return(sce_save)
 }
@@ -226,9 +240,9 @@ human_prefrontal_cortex = function(args){
   colData(sce)$cell = rownames(colData(sce))
   coldata = colData(sce) %>% as_tibble() %>% rename(celltype = Cell.Types) %>% mutate(batch = droplevels(donor_id)) %>%as.data.frame()
   coldata$condition = coldata$disease
-  table(coldata$celltype)
-  table(coldata$batch)
-  table(coldata$condition)
+  message("celltype:\n", paste(capture.output(table(coldata$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(coldata$batch)), collapse = "\n"))
+  message("condtion:\n", paste(capture.output(table(coldata$condition)), collapse = "\n"))
   count_mat = counts(sce)[,coldata$cell]
   sce_save = SingleCellExperiment(list(counts = count_mat), colData = coldata)
   return(sce_save)
@@ -243,8 +257,8 @@ human_lung_atlas = function(args){
   meta = meta[meta$tissue=="lung", ]
   meta$celltype = as.character(droplevels(meta$cell_type))
   meta$batch = as.character(droplevels(meta$donor_id))
-  table(coldata$celltype)
-  table(coldata$batch)
+  message("celltype:\n", paste(capture.output(table(meta$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(meta$batch)), collapse = "\n"))
   meta = meta[,c("celltype", "batch")]
   sce = SingleCellExperiment(assays = list(counts = data),colData = meta)
   return(sce)
@@ -262,9 +276,8 @@ macaque_retina_fovea = function(args){
   coldata_fovea = retina_metadata[fovea,]
   coldata_fovea = coldata_fovea[,-1] %>% mutate(celltype = as.factor(cluster), batch = as.factor(macaque_id) )
   count_fovea = retina_expression_matrix[,rownames(coldata_fovea)]
-  unique(coldata_fovea$celltype)
-  length(unique(coldata_fovea$celltype))
-  unique(coldata_fovea$batch)
+  message("celltype:\n", paste(capture.output(table(coldata_fovea$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(coldata_fovea$batch)), collapse = "\n"))
   sce = SingleCellExperiment(list(counts = count_fovea), colData = coldata_fovea)
   return(sce)
 }
@@ -281,8 +294,8 @@ human_liver = function(args){
   colData(sce)$cell = rownames(colData(sce))
   coldata = colData(sce) %>% as_tibble() %>% filter(tissue =="liver") %>% 
     rename(celltype = cell_type) %>% mutate(batch = droplevels(donor_id)) %>%as.data.frame()
-  table(coldata$celltype)
-  table(coldata$batch)
+  message("celltype:\n", paste(capture.output(table(coldata$celltype)), collapse = "\n"))
+  message("batch:\n", paste(capture.output(table(coldata$batch)), collapse = "\n"))
   count_mat = counts(sce)[,coldata$cell]
   sce_save = SingleCellExperiment(list(counts = count_mat), colData = coldata)
   return(sce_save)
