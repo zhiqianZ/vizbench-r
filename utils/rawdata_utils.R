@@ -197,6 +197,99 @@ human_colorectal_liver <- function(args) {
   return(sce_raw)
 }
 
+				 
+human_lung <- function(args){
+  getGEOSuppFiles("GSE130148")
+  gunzip("GSE130148/GSE130148_raw_counts.RData.gz", remove = FALSE)
+  load("GSE130148/GSE130148_raw_counts.RData")
+  count_mat = raw_counts
+  gunzip("GSE130148/GSE130148_barcodes_cell_types.txt.gz", remove = FALSE)
+  coldata =  read.table("GSE130148/GSE130148_barcodes_cell_types.txt", header = TRUE, sep = "\t")
+  idx = which(colnames(coldata) == "ID")
+  colnames(coldata)[idx] = "batch"
+  head(coldata)
+  coldata$celltype = as.factor(coldata$celltype)
+  coldata$batch = as.factor(coldata$batch)
+  table(coldata$celltype)
+  table(coldata$batch)
+  sce = SingleCellExperiment(list(counts = count_mat), colData = coldata)
+  return(sce_save)
+}
+
+## cellxgene https://cellxgene.cziscience.com/e/9813a1d4-d107-459e-9b2e-7687be935f69.cxg/  https://cellxgene.cziscience.com/collections/5006d6f2-d414-42ed-85d2-d436ee266ac5?explainNewTab
+##  download from cellxgene Single-soma transcriptomics of tangle-bearing neurons in Alzheimer’s disease - Inhibitory 
+## GSE129308, 6 inhibitory neuron clusters
+				 
+human_prefrontal_cortex = function(args){
+  seurat <- readRDS(url("https://datasets.cellxgene.cziscience.com/4c4dedb7-1f74-4be7-9916-21e00106a1a7.rds"))
+  sce = Seurat::as.SingleCellExperiment(seurat)
+  colData(sce)$cell = rownames(colData(sce))
+  coldata = colData(sce) %>% as_tibble() %>% rename(celltype = Cell.Types) %>% mutate(batch = droplevels(donor_id)) %>%as.data.frame()
+  coldata$condition = coldata$disease
+  table(coldata$celltype)
+  table(coldata$batch)
+  table(coldata$condition)
+  count_mat = counts(sce)[,coldata$cell]
+  sce_save = SingleCellExperiment(list(counts = count_mat), colData = coldata)
+  return(sce_save)
+}			
+
+### human lung atlas https://cellxgene.cziscience.com/e/493a8b60-d676-44d1-b022-d14c1ad0b36c.cxg/
+human_lung_atlas = function(args){
+  data = readRDS(url("https://datasets.cellxgene.cziscience.com/5311ca08-a915-4bea-a83c-5f2231ba18ef.rds"))
+  meta = data@meta.data
+  data = GetAssayData(data, assay="RNA", layer="counts")
+  data = data[, meta$tissue=="lung"]
+  meta = meta[meta$tissue=="lung", ]
+  meta$celltype = as.character(droplevels(meta$cell_type))
+  meta$batch = as.character(droplevels(meta$donor_id))
+  table(coldata$celltype)
+  table(coldata$batch)
+  meta = meta[,c("celltype", "batch")]
+  sce = SingleCellExperiment(assays = list(counts = data),colData = meta)
+  return(sce)
+}
+
+### macaque retina fovea  GSE118480, from scPSM figshare
+macaque_retina_fovea = function(args){
+  download.file("https://figshare.com/ndownloader/files/34298483","macaque_retina_fovea/macaque_retina_fovea.zip")
+  unzip("macaque_retina_fovea/macaque_retina_fovea.zip", exdir="macaque_retina_fovea/")
+  retina_expression_matrix <- readRDS("macaque_retina_fovea/retina_expression_matrix.rds")
+  retina_metadata <- readRDS("macaque_retina_fovea/retina_metadata.rds")
+  
+  ## fovea area
+  fovea = which(retina_metadata$region == "Fovea")
+  coldata_fovea = retina_metadata[fovea,]
+  coldata_fovea = coldata_fovea[,-1] %>% mutate(celltype = as.factor(cluster), batch = as.factor(macaque_id) )
+  count_fovea = retina_expression_matrix[,rownames(coldata_fovea)]
+  unique(coldata_fovea$celltype)
+  length(unique(coldata_fovea$celltype))
+  unique(coldata_fovea$batch)
+  sce = SingleCellExperiment(list(counts = count_fovea), colData = coldata_fovea)
+  return(sce)
+}
+
+## cellxgene https://cellxgene.cziscience.com/e/471647b3-04fe-4c76-8372-3264feb950e8.cxg/
+## https://cellxgene.cziscience.com/collections/1cd82f35-026d-48c1-8633-d27ef7485746?explainNewTab
+## download from cellxgene CD34+ Fetal Bone Marrow, Fetal Liver, Cord Blood (CITE-seq)
+## only use liver
+## GSE166895
+## Human liver
+human_liver = function(args){
+  seurat <- readRDS(url("https://datasets.cellxgene.cziscience.com/8e4e400f-30f5-429f-bc38-014e76effe1c.rds"))
+  sce = Seurat::as.SingleCellExperiment(seurat)
+  colData(sce)$cell = rownames(colData(sce))
+  coldata = colData(sce) %>% as_tibble() %>% filter(tissue =="liver") %>% 
+    rename(celltype = cell_type) %>% mutate(batch = droplevels(donor_id)) %>%as.data.frame()
+  table(coldata$celltype)
+  table(coldata$batch)
+  count_mat = counts(sce)[,coldata$cell]
+  sce_save = SingleCellExperiment(list(counts = count_mat), colData = coldata)
+  return(sce_save)
+}
+
+				 
+
 
 				 
 				 
