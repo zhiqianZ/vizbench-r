@@ -266,6 +266,7 @@ human_lung_atlas = function(args){
 
 ### macaque retina fovea  GSE118480, from scPSM figshare
 macaque_retina_fovea = function(args){
+  dir.create("macaque_retina_fovea", recursive = TRUE, showWarnings = FALSE)
   url <- "https://api.figshare.com/v2/file/download/34298483"
   dest <- "macaque_retina_fovea/macaque_retina_fovea.zip"
   
@@ -317,6 +318,7 @@ human_liver = function(args){
 ### mouse Cortex from scPSM figshare (https://figshare.com/articles/dataset/scPSM/19306661)  
 ###				 (also in https://singlecell.broadinstitute.org/single_cell/study/SCP425/single-cell-comparison-cortex-data)  SCP425
 mouse_cortex = function(args){
+  dir.create("mouse_cortex", recursive = TRUE, showWarnings = FALSE)
   url <- "https://api.figshare.com/v2/file/download/34292060"
   dest <- "mouse_cortex/mouse_cortex.zip"
   
