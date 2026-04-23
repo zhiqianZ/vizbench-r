@@ -336,7 +336,7 @@ mouse_cortex = function(args){
   cortex_metadata <- readRDS("mouse_cortex/cortex_metadata.rds")
   ## only use experiment2
   #exp2 = which(cortex_metadata$Experiment=="Cortex2")
-  coldata = cortex_metadata[exp2,]
+  coldata = cortex_metadata# [exp2,]
   no_smart_seq = which(coldata$Method != "Smart-seq2")
   coldata = coldata[no_smart_seq,]
   idx = which(colnames(coldata) == "CellType")
