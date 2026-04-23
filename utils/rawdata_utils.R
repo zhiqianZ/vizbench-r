@@ -266,7 +266,19 @@ human_lung_atlas = function(args){
 
 ### macaque retina fovea  GSE118480, from scPSM figshare
 macaque_retina_fovea = function(args){
-  download.file("https://figshare.com/ndownloader/files/34298483","macaque_retina_fovea/macaque_retina_fovea.zip")
+  url <- "https://api.figshare.com/v2/file/download/34298483"
+  dest <- "macaque_retina_fovea/macaque_retina_fovea.zip"
+  
+  options(timeout = 3600)
+  options(HTTPUserAgent = "Mozilla/5.0")
+  
+  download.file(
+    url = url,
+    destfile = dest,
+    mode = "wb",
+    method = "libcurl"
+  )
+  #download.file("https://figshare.com/ndownloader/files/34298483","macaque_retina_fovea/macaque_retina_fovea.zip")
   unzip("macaque_retina_fovea/macaque_retina_fovea.zip", exdir="macaque_retina_fovea/")
   retina_expression_matrix <- readRDS("macaque_retina_fovea/retina_expression_matrix.rds")
   retina_metadata <- readRDS("macaque_retina_fovea/retina_metadata.rds")
@@ -304,9 +316,19 @@ human_liver = function(args){
 
 ### mouse Cortex from scPSM figshare (https://figshare.com/articles/dataset/scPSM/19306661)  
 ###				 (also in https://singlecell.broadinstitute.org/single_cell/study/SCP425/single-cell-comparison-cortex-data)  SCP425
-
 mouse_cortex = function(args){
-  download.file("https://figshare.com/ndownloader/files/34292060","mouse_cortex/mouse_cortex.zip")
+  url <- "https://api.figshare.com/v2/file/download/34292060"
+  dest <- "mouse_cortex/mouse_cortex.zip"
+  
+  options(timeout = 3600)
+  options(HTTPUserAgent = "Mozilla/5.0")
+  
+  download.file(
+    url = url,
+    destfile = dest,
+    mode = "wb",
+    method = "libcurl"
+  )
   unzip("mouse_cortex/mouse_cortex.zip",exdir="mouse_cortex")
   cortex_expression_matrix <- readRDS("mouse_cortex/cortex_expression_matrix.rds")
   cortex_metadata <- readRDS("mouse_cortex/cortex_metadata.rds")
@@ -326,8 +348,7 @@ mouse_cortex = function(args){
   count = cortex_expression_matrix[,rownames(coldata)]
   sce = SingleCellExperiment(list(counts = count),colData = coldata)
   sce 
-}
-				 
+}	 
 				 
 
 
