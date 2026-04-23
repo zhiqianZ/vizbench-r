@@ -32,9 +32,11 @@ parser$add_argument("--flavour",
                                 "mouse_intestine", "mouse_lung", "human_pancreas", "human_lung", # raw data
                                 "scdesign3",                                                                                         # simulate
                                 "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "sanity",          # normalize
-                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI",                                    # integrate
-                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA", "BHtSNE_scDEED",
-                                "SeuratUMAP_scDEED", "FItSNE_scDEED", "scanpyUMAP_scDEED",           # visualize
+                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI", 
+                                "harmony-integrateRigor", "fastMNN-integrateRigor", "SeuratCCA-integrateRigor","SeuratRPCA-integrateRigor",
+                                "LIGER-integrateRigor", "scVI-integrateRigor", # integrate
+                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA", "BHtSNE-scDEED",
+                                "SeuratUMAP-scDEED", "FItSNE-scDEED", "scanpyUMAP-scDEED",           # visualize
                                 "celltype_shape", "batch_mixture", "distance_preservation", "variance_preservation",
                                 "variance_samplesize", "library_size", "zero_proportion", "celltype_separation"),                    # metrics
                     required = TRUE, 
