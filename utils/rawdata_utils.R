@@ -349,6 +349,7 @@ mouse_cortex = function(args){
   message("batch:\n", paste(capture.output(table(coldata$batch)), collapse = "\n"))
   count = cortex_expression_matrix[,rownames(coldata)]
   sce = SingleCellExperiment(list(counts = count),colData = coldata)
+  sce <- sce[, colData(sce)$celltype != "Unassigned"]
   sce 
 }	 
 				 
