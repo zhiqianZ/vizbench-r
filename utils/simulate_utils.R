@@ -41,7 +41,7 @@ scdesign3 <- function(args) {
   seurat = CreateSeuratObject(counts)
   seurat = FindVariableFeatures(seurat,nfeatures = ngenes) 
   hvg = VariableFeatures(seurat)
-  counts = counts[hvg,]
+  counts = GetAssayData(seurat, layer="counts")[hvg,]
 							   
   if(args$verbose) message(paste0(dim(counts), collapse=","))
   ## scDesign3
