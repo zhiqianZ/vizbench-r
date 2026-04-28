@@ -13,7 +13,7 @@ load_pkgs <- function() {
   library(dplyr)
 }
 
-  
+
 celltype_shape = function(args) {
   
   # read embeddings
@@ -59,23 +59,34 @@ batch_mixture <- function(args, seed=42){
   }
   
   val = mclapply(1:B, FUN=function(i){
-    id = sample(1:nrow(data), n, replace = FALSE)
-    res = mean(sapply(unique(celltype[id]), function(c){
-      ids = id[celltype[id]==c]
-      if(length(unique(batch[ids]))>1){
-        per = min(round(table(batch[ids])/2),30)
-        lisi_res  = compute_lisi(data[ids,], data.frame(batch=batch[ids]), 
-                                 "batch", perplexity = per)
-        return(mean(lisi_res$batch))
-      }else{
-        return(NA)
-      }
-    }
-    ),na.rm=TRUE)
-    return(res)
+    id = sample(1:nrow(data), n, replace = F)
+    res <- sapply(unique(celltype[id]), function(c) {
+      ids <- id[celltype[id] == c]
+      bb <- as.character(batch[ids])
+      
+      tab <- table(bb)
+      keep_batch <- names(tab)[tab >= 10]
+      
+      ids <- ids[bb %in% keep_batch]
+      bb <- bb[bb %in% keep_batch]
+      if (length(unique(bb)) < 2) return(NA_real_)
+      
+      tab <- table(bb)
+      
+      per <- min(round(min(tab) / 2), 30)
+      if (per < 1) return(NA_real_)
+      
+      lisi_res <- compute_lisi(
+        data[ids, , drop = FALSE],
+        data.frame(batch = bb),
+        "batch",
+        perplexity = per
+      )
+      mean(lisi_res$batch, na.rm = TRUE)
+    })
+    mean(res, na.rm = TRUE)
   }, mc.cores = nthreads)
-  val = unlist(val)
-
+  
   return(mean(val,na.rm=T))
 }
 
@@ -93,7 +104,7 @@ celltype_separation = function(args, seed=42){
   batch <- sce$batch
   celltype <- sce$celltype
   rm(sce)
- 
+  
   if(nrow(data)<100000){
     nthreads = 1
     B = 1
@@ -102,21 +113,34 @@ celltype_separation = function(args, seed=42){
   
   val = mclapply(1:B, FUN=function(i){
     id = sample(1:nrow(data), n, replace = F)
-    res = mean(sapply(unique(batch[id]), function(b){
-      ids = id[batch[id]==b]
-      if(length(unique(celltype[ids]))>1){
-        dist = distances(data[ids,])
-        sil_res = silhouette(as.numeric(celltype[ids]), dist)
-        return(mean(tapply(sil_res[,"sil_width"], celltype[ids], mean)))
-      }else{
-        return(NA)
-      }
-    }
-    ), na.rm=T)
-    return(res)
+    res <- sapply(unique(batch[id]), function(c) {
+      ids <- id[batch[id] == c]
+      bb <- as.character(celltype[ids])
+      
+      tab <- table(bb)
+      keep_batch <- names(tab)[tab >= 10]
+      
+      ids <- ids[bb %in% keep_batch]
+      bb <- bb[bb %in% keep_batch]
+      if (length(unique(bb)) < 2) return(NA_real_)
+      
+      tab <- table(bb)
+      
+      per <- min(round(min(tab) / 2), 30)
+      if (per < 1) return(NA_real_)
+      
+      lisi_res <- compute_lisi(
+        data[ids, , drop = FALSE],
+        data.frame(celltype = bb),
+        "celltype",
+        perplexity = per
+      )
+      mean(lisi_res$celltype, na.rm = TRUE)
+    })
+    mean(res, na.rm = TRUE)
   }, mc.cores = nthreads)
   val = unlist(val)
-  return(mean(val,na.rm=T))
+  mean(val,na.rm=T)
 }
 
 
@@ -175,7 +199,7 @@ variance_preservation = function(args, seed=42){
     hv = rowSums(h)
     lv = rowSums(l)
     cor(hv, lv, method = "spearman")
-              
+    
   })
   return(mean(val))
 }
@@ -237,7 +261,7 @@ library_size = function(args, seed=42){
   },mc.cores = nthreads)
   val = unlist(val)
   
-  return(mean(val))
+  mean(val, na.rm=T)
 }
 
 zero_proportion = function(args, seed=42){
@@ -267,7 +291,7 @@ zero_proportion = function(args, seed=42){
     res = mean(sapply(unique(batch[id]), function(b){
       ids = id[batch[id]==b]
       if(length(unique(celltype[ids]))>1){
-        return(1 - tapply(ids, celltype[ids], function(idd) Rfast::dcor(zp[idd], data[idd,])$dcor))
+        return(1 - tapply(ids, celltype[ids], function(idd) dcor(zp[idd], data[idd,])$dcor))
       }else{
         return(NA)
       }
@@ -275,6 +299,6 @@ zero_proportion = function(args, seed=42){
     return(res)
   },mc.cores = nthreads)
   val = unlist(val)
-
-  return(mean(val))
+  
+  mean(val, na.rm=T)
 }
