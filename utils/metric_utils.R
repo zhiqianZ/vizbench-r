@@ -112,7 +112,7 @@ celltype_separation = function(args, seed=42){
   
   val = mclapply(1:B, FUN=function(i){
     id = sample(1:nrow(data), n, replace = F)
-    res <- sapply(unique(droplevels(batch[id])), function(c) {
+    res <- sapply(unique(batch[id]), function(c) {
       ids <- id[batch[id] == c]
       bb <- as.character(celltype[ids])
       
@@ -141,7 +141,6 @@ celltype_separation = function(args, seed=42){
   val = unlist(val)
   (length(unique(celltype)) - mean(val,na.rm=T))/(length(unique(celltype))-1)
 }
-
 
 
 distance_preservation = function(args, seed=42){
