@@ -1,4 +1,3 @@
-
 load_pkgs <- function() {
   library(SeuratWrappers)
   library(Seurat)
@@ -48,8 +47,8 @@ batch_mixture <- function(args, seed=42){
   data <- as.data.frame(read_csv(args$visualize.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
-  batch <- sce$batch
-  celltype <- sce$celltype
+  batch <- as.character(sce$batch)
+  celltype <- as.character(sce$celltype)
   rm(sce)
   
   if(nrow(data)<100000){
@@ -86,8 +85,8 @@ batch_mixture <- function(args, seed=42){
     })
     mean(res, na.rm = TRUE)
   }, mc.cores = nthreads)
-  
-  return(mean(val,na.rm=T))
+  val = unlist(val)
+  (mean(val,na.rm=T)-1) / (length(unique(batch))-1)
 }
 
 
@@ -101,8 +100,8 @@ celltype_separation = function(args, seed=42){
   data <- as.data.frame(read_csv(args$visualize.csv.gz))
   # read SCE to get batch/celltype 
   sce <- read_sce(args$integrate.ad)
-  batch <- sce$batch
-  celltype <- sce$celltype
+  batch <- as.character(sce$batch)
+  celltype <- as.character(sce$celltype)
   rm(sce)
   
   if(nrow(data)<100000){
@@ -113,7 +112,7 @@ celltype_separation = function(args, seed=42){
   
   val = mclapply(1:B, FUN=function(i){
     id = sample(1:nrow(data), n, replace = F)
-    res <- sapply(unique(batch[id]), function(c) {
+    res <- sapply(unique(droplevels(batch[id])), function(c) {
       ids <- id[batch[id] == c]
       bb <- as.character(celltype[ids])
       
@@ -140,7 +139,7 @@ celltype_separation = function(args, seed=42){
     mean(res, na.rm = TRUE)
   }, mc.cores = nthreads)
   val = unlist(val)
-  mean(val,na.rm=T)
+  (length(unique(celltype)) - mean(val,na.rm=T))/(length(unique(celltype))-1)
 }
 
 
