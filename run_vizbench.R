@@ -1,268 +1,500 @@
 #!/usr/bin/env Rscript
 
-## Originally sketched by Izaskun Mallona
-## modified/populated by Mark Robinson
-## various chunks of code from Zhiqian Zhai and Qingyang Wang will be linked
-## from original repo: https://github.com/zhiqianZ/Benchmark-Normalization-Integration-Visualization
+## run_vizbench.R
+##
+## Unified entry point for vizbench-r.
+##
+## Design:
+##   --what    defines the pipeline stage, e.g. simulate, normalize,
+##             integrate_normalize, visualize_count, metric_normalize.
+##   --flavour defines the method/function to run. The function name must
+##             exist in utils/<stage>_utils.R and must accept one argument:
+##             args, a named list of parsed command-line arguments.
+##
+## Example:
+##   Rscript run_vizbench.R \
+##     --what simulate \
+##     --flavour scdesign3 \
+##     --rawdata.ad input/raw.h5ad \
+##     --name dataset1 \
+##     --output_dir output/
+##
+##   Rscript run_vizbench.R \
+##     --what simulate \
+##     --flavour real \
+##     --rawdata.ad input/raw.h5ad \
+##     --simulate_mean.csv.gz output/dataset1_simulate_mean.csv.gz \
+##     --simulate_var.csv.gz output/dataset1_simulate_var.csv.gz \
+##     --name dataset1_real \
+##     --output_dir output/
 
-## Usage:
-## to do a system call to showcase how to call other subscripts
-##    Rscript thisfilename.R --what type --flavour specific-module
+suppressPackageStartupMessages({
+  library(argparse)
+  library(reticulate)
+  library(jsonlite)
+  library(readr)
+})
 
-library(argparse)
-library(reticulate)
+## -----------------------------------------------------------------------------
+## Helper functions
+## -----------------------------------------------------------------------------
 
-parser <- ArgumentParser(description = "Benchmarking entrypoint")
+get_stage <- function(what) {
+  sub("_.*$", "", what)
+}
 
-# define arguments
-parser$add_argument("--what", 
-                    choices = c("rawdata", "simulate", "normalize", 
-                                "integrate_normalize", "visualize_normalize",
-                                "integrate_count", "visualize_count", "metric_normalize", "metric_count"),
-                    required = TRUE, 
-                    help = "Module type: rawdata, simulate, normalize, integrate, vizualize, metric")
+get_branch <- function(what) {
+  if (!grepl("_", what)) {
+    return(NA_character_)
+  }
+  sub("^.*_", "", what)
+}
 
-#s <- switch(args$what, rawdata = c("mouse_pancreas"),
-#                       simulation = c("scdesign3"))
-# TODO: add subparser?
+script_dir <- function() {
+  cargs <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("--file=", cargs, value = TRUE)
 
-parser$add_argument("--flavour", 
-                    choices = c("mouse_pancreas", "human_IFALD_liver", "human_atheroma", "human_covid_blood","human_glaucoma_pbmc", "human_colorectal_liver", 
-                                "human_prefrontal_cortex", "human_lung_atlas", "human_liver_atlas","human_pbmc", "macaque_retina_fovea", "mouse_cortex",
-                                "mouse_intestine", "mouse_lung", "human_pancreas", "human_lung", "human_liver", # raw data
-                                "scdesign3", "raw",                                                                                  # simulate
-                                "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "sanity",          # normalize
-                                "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI", 
-                                "harmony-integrateRigor", "fastMNN-integrateRigor", "SeuratCCA-integrateRigor","SeuratRPCA-integrateRigor",
-                                "LIGER-integrateRigor", "scVI-integrateRigor", # integrate
-                                "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA", "BHtSNE-scDEED",
-                                "SeuratUMAP-scDEED", "FItSNE-scDEED", "scanpyUMAP-scDEED", "densMAP-scDEED"     # visualize
-                                "celltype_shape", 
-                                "batch_mixture", 
-                                "batch_mixture_condition",
-                                "distance_preservation", 
-                                "variance_preservation",
-                                "variance_samplesize", 
-                                "library_size", 
-                                "zero_proportion", 
-                                "celltype_separation",
-                                "cLISI",
-                                "silhouette"),                    # metrics
-                    required = TRUE, 
-                    help = "Module to run: name depends on the 'what'")
+  if (length(file_arg) > 0) {
+    return(dirname(normalizePath(sub("--file=", "", file_arg[1]))))
+  }
 
+  ## Fallback for interactive/debug usage.
+  return(getwd())
+}
+
+source_or_quit <- function(path, python = FALSE) {
+  if (!file.exists(path)) {
+    message("Helper code not found: ", path)
+    quit("no", status = 1)
+  }
+
+  message("Sourcing: ", path)
+
+  if (python) {
+    reticulate::source_python(path, convert = FALSE)
+  } else {
+    source(path)
+  }
+}
+
+require_arg <- function(args, name, stage_context = NULL) {
+  value <- args[[name]]
+
+  if (is.null(value) || is.na(value) || !nzchar(as.character(value))) {
+    msg <- paste0("Missing required argument: --", name)
+    if (!is.null(stage_context)) {
+      msg <- paste0(msg, " for ", stage_context)
+    }
+    stop(msg, call. = FALSE)
+  }
+
+  invisible(value)
+}
+
+write_anndata_or_seurat <- function(x, path, verbose = TRUE) {
+  if (verbose) {
+    message("Writing AnnData/Seurat object: ", path)
+  }
+
+  if (typeof(x) != "environment") {
+    write_seurat_ad(x, path)
+  } else {
+    x$write_h5ad(path, compression = "gzip")
+  }
+}
+
+write_json <- function(x, path) {
+  write(jsonlite::toJSON(x, auto_unbox = TRUE, pretty = TRUE), path)
+}
+
+write_csv_gz <- function(x, path) {
+  readr::write_csv(as.data.frame(x), file = path)
+}
+
+## -----------------------------------------------------------------------------
+## Arguments
+## -----------------------------------------------------------------------------
+
+parser <- ArgumentParser(description = "vizbench-r benchmarking entry point")
+
+parser$add_argument(
+  "--what",
+  choices = c(
+    "rawdata",
+    "simulate",
+    "normalize",
+    "integrate_normalize",
+    "visualize_normalize",
+    "integrate_count",
+    "visualize_count",
+    "metric_normalize",
+    "metric_count"
+  ),
+  required = TRUE,
+  help = paste(
+    "Pipeline stage:",
+    "rawdata, simulate, normalize, integrate_*, visualize_*, metric_*"
+  )
+)
+
+parser$add_argument(
+  "--flavour",
+  choices = c(
+    ## raw data
+    "mouse_pancreas",
+    "human_IFALD_liver",
+    "human_atheroma",
+    "human_covid_blood",
+    "human_glaucoma_pbmc",
+    "human_colorectal_liver",
+    "human_prefrontal_cortex",
+    "human_lung_atlas",
+    "human_liver_atlas",
+    "human_pbmc",
+    "macaque_retina_fovea",
+    "mouse_cortex",
+    "mouse_intestine",
+    "mouse_lung",
+    "human_pancreas",
+    "human_lung",
+    "human_liver",
+
+    ## simulate
+    "scdesign3",
+    "real",
+
+    ## normalize
+    "log1pCP10k",
+    "log1pCPM",
+    "sctransform",
+    "log1pPF",
+    "PFlog1pPF",
+    "log1pCPMedian",
+    "sanity",
+
+    ## integrate
+    "harmony",
+    "fastMNN",
+    "SeuratCCA",
+    "SeuratRPCA",
+    "LIGER",
+    "scVI",
+    "harmony-integrateRigor",
+    "fastMNN-integrateRigor",
+    "SeuratCCA-integrateRigor",
+    "SeuratRPCA-integrateRigor",
+    "LIGER-integrateRigor",
+    "scVI-integrateRigor",
+
+    ## visualize
+    "SeuratUMAP",
+    "scanpyUMAP",
+    "BHtSNE",
+    "FItSNE",
+    "densMAP",
+    "denSNE",
+    "PHATE",
+    "graphFA",
+    "BHtSNE-scDEED",
+    "SeuratUMAP-scDEED",
+    "FItSNE-scDEED",
+    "scanpyUMAP-scDEED",
+    "densMAP-scDEED",
+
+    ## metrics
+    "celltype_shape",
+    "batch_mixture",
+    "batch_mixture_condition",
+    "distance_preservation",
+    "variance_preservation",
+    "variance_samplesize",
+    "library_size",
+    "zero_proportion",
+    "celltype_separation",
+    "cLISI",
+    "silhouette"
+  ),
+  required = TRUE,
+  help = "Method/function to run. Must match a function name in utils/<stage>_utils.R."
+)
+
+## general benchmark parameters
 parser$add_argument("--ncells", type = "integer", default = 1000000,
-                    help = "number of cells to simulate")
-
+                    help = "Number of cells to simulate")
 parser$add_argument("--ngenes", type = "integer", default = 3000,
-                    help = "number of genes to simulate")
-
+                    help = "Number of genes to use/simulate")
 parser$add_argument("--nthreads", type = "integer", default = 10,
-                    help = "numer of threads used for simulating and benchmarking methods")
-
+                    help = "Number of threads")
 parser$add_argument("--npcs", type = "integer", default = 50,
-                    help = "number of pcs used")
-
+                    help = "Number of PCs")
 parser$add_argument("--nhvgs", type = "integer", default = 2000,
-                    help = "number of hvgs used")
-
+                    help = "Number of HVGs")
 parser$add_argument("--B", type = "integer", default = 100,
-                    help = "Resampling replicate times for calcualting metrics")
-
+                    help = "Number of resampling replicates for metrics")
 parser$add_argument("--N", type = "integer", default = 10000,
-                    help = "Resampling sample size for calcualting metrics")
+                    help = "Resampling sample size for metrics")
 
-parser$add_argument("--use_simulation", type = "logical", default = TRUE,
-                    help = "whether used the simulated datasets to benchmark")
+## use character instead of logical to avoid argparse TRUE/FALSE edge cases
+parser$add_argument("--verbose", type = "character", default = "TRUE",
+                    help = "TRUE/FALSE: whether to print progress messages")
 
-parser$add_argument("--verbose", type = "logical", default = TRUE,
-                    help = "TRUE/FALSE as to whether to write progress to stdout")
+parser$add_argument("--params", type = "character", default = NA_character_,
+                    help = "Optional extra parameter string passed to downstream functions")
 
-parser$add_argument("--output_dir", "-o", dest="output_dir", type="character",
-                    help="output directory where files will be saved", default=getwd(),
-                    required = TRUE)
+parser$add_argument("--output_dir", "-o", dest = "output_dir",
+                    type = "character", default = getwd(),
+                    help = "Output directory where files will be saved")
+parser$add_argument("--name", "-n", dest = "name",
+                    type = "character", required = TRUE,
+                    help = "Dataset/run name used as output file prefix")
 
-parser$add_argument("--name", "-n", dest="name", type="character", required = TRUE,
-                    help="name of the dataset")
+## stage input/output arguments
+parser$add_argument("--rawdata.ad", type = "character",
+                    help = "Input raw AnnData file")
+parser$add_argument("--simulate.ad", type = "character",
+                    help = "Input simulated/real-count AnnData file")
+parser$add_argument("--simulate_mean.csv.gz", type = "character",
+                    help = "CSV file containing batch-celltype gene-wise mean parameters")
+parser$add_argument("--simulate_var.csv.gz", type = "character",
+                    help = "CSV file containing batch-celltype gene-wise variance parameters")
+parser$add_argument("--normalize.ad", type = "character",
+                    help = "Input normalized AnnData file")
+parser$add_argument("--normalize.json", type = "character",
+                    help = "JSON file storing normalization method")
+parser$add_argument("--integrate_normalize.ad", type = "character",
+                    help = "Integrated AnnData from normalized branch")
+parser$add_argument("--visualize_normalize.csv.gz", type = "character",
+                    help = "2D embedding CSV from normalized branch")
+parser$add_argument("--integrate_count.ad", type = "character",
+                    help = "Integrated AnnData from count branch")
+parser$add_argument("--visualize_count.csv.gz", type = "character",
+                    help = "2D embedding CSV from count branch")
 
-parser$add_argument('--rawdata.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (raw) data as AnnData')
+## Python / reticulate
+parser$add_argument("--py_path", type = "character", default = "/usr/bin/python3",
+                    help = "Python path for reticulate")
+parser$add_argument("--scvi_conda", type = "character", default = NA_character_,
+                    help = "Optional scVI conda/Python environment identifier")
 
-parser$add_argument('--simulate.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (simulated) data as AnnData')
-
-parser$add_argument('--simulate_mean.csv.gz',
-                    type="character",
-                    help='gz-compressed CSV file containing per batch and cell-type gene-wise true mean parameters')
-
-parser$add_argument('--simulate_var.csv.gz',
-                    type="character",
-                    help='gz-compressed CSV file containing per batch and cell-type gene-wise true variance parameters')
-
-parser$add_argument('--normalize.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (normalized) data as AnnData')
-
-parser$add_argument('--normalize.json',
-                    type="character",
-                    help='JSON file containing name of normalization method')
-
-parser$add_argument('--integrate_normalize.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
-
-parser$add_argument('--visualize_normalize.csv.gz',
-                    type="character",
-                    help='gz-compressed CSV file containing embeddings')
-
-parser$add_argument('--integrate_count.ad',
-                    type="character",
-                    help='gz-compressed H5 file containing (integrated_from_nrom) data as AnnData')
-
-parser$add_argument('--visualize_count.csv.gz',
-                    type="character",
-                    help='gz-compressed CSV file containing embeddings')
-
-parser$add_argument('--py_path', 
-                    type="character",
-                    default="/usr/bin/python3",
-                    help='the path of the Python for the reticulate package to use')
-
-parser$add_argument('--scvi_conda', 
-                    type="character",
-                    default="/usr/bin/python3",
-                    help='the path of the Python for the reticulate package to use')
-
-# send details to be logged
 args <- parser$parse_args()
-message("Full command: ", paste0(commandArgs(), collapse = " "))
-message("Selected category: ", args$what)
+
+args$verbose <- tolower(args$verbose) %in% c("true", "t", "1", "yes", "y")
+
+stage <- get_stage(args$what)
+branch <- get_branch(args$what)
+run_dir <- script_dir()
+
+if (!dir.exists(args$output_dir)) {
+  dir.create(args$output_dir, recursive = TRUE, showWarnings = FALSE)
+}
+
+## -----------------------------------------------------------------------------
+## Logging
+## -----------------------------------------------------------------------------
+
+message("Full command: ", paste(commandArgs(), collapse = " "))
+message("Selected stage: ", args$what)
+message("Base stage: ", stage)
+message("Branch: ", ifelse(is.na(branch), "none", branch))
 message("Routine selected: ", args$flavour)
 message("Additional parameters: ", args$params)
-message("name: ", args$name)
+message("Name: ", args$name)
+message("Output directory: ", args$output_dir)
 message("Verbose: ", args$verbose)
+message("Run directory: ", run_dir)
+message("libPaths: ", paste(.libPaths(), collapse = ";"))
 
-# infer the current directory (useful for debugging)
-cargs <- commandArgs(trailingOnly = FALSE)
-m <- grep("--file=", cargs)
-run_dir <- dirname( gsub("--file=","",cargs[[m]]) )
-message("location: ", run_dir)
-message("libPaths: ", paste0(.libPaths(),collapse=";"))
 info <- Sys.info()
-message("info: ", paste0(names(info),"=",info,collapse=";"))
+message("Sys.info: ", paste0(names(info), "=", info, collapse = ";"))
 
-# check if implemented: throw error if not; run if so
-# n.b.: args$flavour defines what 'main' function to call
-if (sub("_.*$", "", args$what) == "visualize"){
-  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
+## -----------------------------------------------------------------------------
+## Infer branch-specific inputs
+## -----------------------------------------------------------------------------
+
+if (stage == "visualize") {
+  integrate_arg <- paste0("integrate_", branch, ".ad")
+  args$integrate.ad <- args[[integrate_arg]]
+  require_arg(args, "integrate.ad", args$what)
 }
-if (sub("_.*$", "", args$what) == "metric"){
-  args$visualize.csv.gz = args[[paste0("visualize_",sub("^.*_", "", args$what), ".csv.gz")]]
-  args$integrate.ad = args[[paste0("integrate_",sub("^.*_", "", args$what), ".ad")]]
+
+if (stage == "metric") {
+  visualize_arg <- paste0("visualize_", branch, ".csv.gz")
+  integrate_arg <- paste0("integrate_", branch, ".ad")
+
+  args$visualize.csv.gz <- args[[visualize_arg]]
+  args$integrate.ad <- args[[integrate_arg]]
+
+  require_arg(args, "visualize.csv.gz", args$what)
+  require_arg(args, "integrate.ad", args$what)
 }
 
-use_python(args$py_path)
+## Minimal input checks for common stages
+if (args$what == "simulate") {
+  require_arg(args, "rawdata.ad", "simulate")
+}
 
-##### Source file #####
-options(future.globals.maxSize= 10^20)
-# source common helper functions
-helpers <- file.path(run_dir, "utils", "common_utils.R")
-if( file.exists(helpers) ) {
-  message("Sourcing .. ", helpers)
-  source(helpers)
+if (args$what == "normalize") {
+  require_arg(args, "simulate.ad", "normalize")
+}
+
+if (stage == "integrate") {
+  if (branch == "normalize") {
+    require_arg(args, "normalize.ad", args$what)
+  }
+  if (branch == "count") {
+    require_arg(args, "simulate.ad", args$what)
+  }
+}
+
+## -----------------------------------------------------------------------------
+## Python setup
+## -----------------------------------------------------------------------------
+
+if (!is.null(args$py_path) && !is.na(args$py_path) && nzchar(args$py_path)) {
+  reticulate::use_python(args$py_path, required = FALSE)
+}
+
+options(future.globals.maxSize = 10^20)
+
+## -----------------------------------------------------------------------------
+## Source helper files
+## -----------------------------------------------------------------------------
+
+common_helper <- file.path(run_dir, "utils", "common_utils.R")
+source_or_quit(common_helper)
+
+if (exists("Set_Threads_BLAS_OMP", mode = "function")) {
   Set_Threads_BLAS_OMP()
-} else {
-  message(paste0("Helper code in ", helpers, " not found. Exiting."))
+}
+
+## source Python helper only for stages that use Python helper code
+if (stage %in% c("normalize", "visualize")) {
+  py_helper <- file.path(run_dir, "utils", paste0(stage, "_utils.py"))
+  source_or_quit(py_helper, python = TRUE)
+}
+
+if (args$flavour == "FItSNE") {
+  fitsne_path <- "/FIt-SNE/fast_tsne.R"
+  if (file.exists(fitsne_path)) {
+    source(fitsne_path, chdir = TRUE)
+  } else {
+    warning("FItSNE helper not found at: ", fitsne_path)
+  }
+}
+
+stage_helper <- file.path(run_dir, "utils", paste0(stage, "_utils.R"))
+source_or_quit(stage_helper)
+
+## -----------------------------------------------------------------------------
+## Load stage-specific packages
+## -----------------------------------------------------------------------------
+
+if (!exists("load_pkgs", mode = "function")) {
+  stop("The helper file must define load_pkgs().", call. = FALSE)
+}
+
+suppressPackageStartupMessages(load_pkgs())
+
+## -----------------------------------------------------------------------------
+## Run selected method
+## -----------------------------------------------------------------------------
+
+fun <- tryCatch(
+  get(args$flavour, mode = "function"),
+  error = function(e) e
+)
+
+if (inherits(fun, "error")) {
+  message("Unimplemented functionality: ", args$flavour)
   quit("no", status = 1)
 }
 
-# source normalization python helper functions
-if (sub("_.*$", "", args$what) %in% c("normalize", "visualize")) {
-  helpers <- file.path(run_dir, "utils", paste0(sub("_.*$", "", args$what), "_utils.py"))
-  if( file.exists(helpers) ) {
-    message("Sourcing .. ", helpers)
-    source_python(helpers, convert = FALSE)
+message("Running: ", args$flavour)
+
+x <- fun(as.list(args))
+
+mean_par <- NULL
+var_par <- NULL
+
+if (args$what == "simulate") {
+  if (!is.list(x) || !all(c("obj", "mean_par", "var_par") %in% names(x))) {
+    stop(
+      "simulate flavour must return a list with elements: obj, mean_par, var_par.",
+      call. = FALSE
+    )
+  }
+
+  mean_par <- x$mean_par
+  var_par <- x$var_par
+  x <- x$obj
+}
+
+message("Done running: ", args$flavour)
+
+## -----------------------------------------------------------------------------
+## Save outputs
+## -----------------------------------------------------------------------------
+
+## AnnData-like outputs
+if (stage %in% c("rawdata", "simulate", "normalize", "integrate")) {
+  ad_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".ad"))
+  write_anndata_or_seurat(x, ad_path, verbose = args$verbose)
+}
+
+## Method metadata
+if (args$what == "normalize") {
+  json_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".json"))
+  write_json(list(normalize = args$flavour), json_path)
+}
+
+if (stage == "integrate") {
+  json_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".json"))
+  write_json(list(integrate = args$flavour), json_path)
+}
+
+## Simulation parameter outputs
+if (args$what == "simulate") {
+  mean_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, "_mean.csv.gz"))
+  var_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, "_var.csv.gz"))
+
+  if (args$verbose) {
+    message("Writing mean parameters: ", mean_path)
+  }
+  write_csv_gz(mean_par, mean_path)
+
+  if (args$verbose) {
+    message("Writing variance parameters: ", var_path)
+  }
+  write_csv_gz(var_par, var_path)
+}
+
+## Visualization outputs
+if (stage == "visualize") {
+  csv_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".csv.gz"))
+
+  if (args$verbose) {
+    message("Writing visualization embedding: ", csv_path)
+  }
+
+  if (!args$flavour %in% c("scanpyUMAP", "graphFA")) {
+    write_csv_gz(x, csv_path)
   } else {
-    message(paste0("Helper code in ", helpers, " not found. Exiting."))
-    quit("no", status = 1)
+    x_R <- reticulate::py_to_r(x)
+    con <- gzfile(csv_path, open = "wt")
+    on.exit(close(con), add = TRUE)
+    write.csv(x_R, con, row.names = FALSE)
   }
 }
-if(args$flavour == "FItSNE"){
-  source("/FIt-SNE/fast_tsne.R",chdir=T)
-}
 
-# source stage-specific helper functions (n.b.: according to args$what)
-helpers <- file.path(run_dir, "utils", paste0(sub("_.*$", "", args$what), "_utils.R"))
-if( file.exists(helpers) ) {
-    message("Sourcing .. ", helpers)
-    source(helpers)
-} else {
-    message(paste0("Helper code in ", helpers, " not found. Exiting."))
-    quit("no", status = 1)
-} 
+## Metric outputs
+if (stage == "metric") {
+  json_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".json"))
 
-##### Load packages #####
-suppressPackageStartupMessages(load_pkgs())
-
-##### Run #####
-fun <- tryCatch(obj <- get(args$flavour), error = function(e) e)
-if ( !("error" %in% class(fun)) ) {
-    x <- fun(as.list(args)) # execute function 
-    if(args$what == "simulate"){
-      mean_par <- x$mean_par
-      var_par <- x$var_par
-      x <- x$obj
-    }
-  message("done running")
-} else {
-    message('Unimplemented functionality. Exiting.\n') # throw error?
-    quit("no", status = 1)
-}
-
-##### Save #####
-# write to AnnData via anndataR
-if (sub("_.*$", "", args$what) %in% c("rawdata", "simulate", "normalize", "integrate")) {
-  # here, always writing data files as AD (HDF5)
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
-  if(typeof(x)!="environment"){
-    write_seurat_ad(x, fn)
-  }else{
-    if(args$verbose) message(paste0("Writing: ", fn, "."))
-    x$write_h5ad(fn, compression = "gzip")
+  if (args$verbose) {
+    message("Writing metric: ", json_path)
   }
-} 
-# write memento about normalization method
-if(args$what == "normalize") {
-  fn <- file.path(args$output_dir, paste0(args$name,"_", args$what, ".json"))
-  write(toJSON(list(normalize=args$flavour)), fn)
+
+  write_json(list(value = x), json_path)
 }
-                
-if(sub("_.*$", "", args$what) == "integrate"){
-  fn <- file.path(args$output_dir, paste0(args$name, args$what, ".json"))
-  write(toJSON(list(intgrate=args$flavour)), fn)
-}
-                
-if(args$what == "simulate"){
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_mean.csv.gz"))
-  write_csv(as.data.frame(mean_par), file = fn)
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, "_var.csv.gz"))
-  write_csv(as.data.frame(var_par), file = fn)
-}
-                
-if(sub("_.*$", "", args$what) == "visualize") {
-  # here, write embeddings to gzipped CSV file
-  fn <- gzfile(file.path(args$output_dir, 
-                         paste0(args$name, "_", args$what, ".csv.gz")))
-  if(!args$flavour %in% c("scanpyUMAP","graphFA")){
-    write_csv(as.data.frame(x), file = fn)
-  }else{
-    x_R <- py_to_r(x)
-    write.csv(x_R, fn, row.names = FALSE)
-  }
-} else if (sub("_.*$", "", args$what) == "metric") {
-  # 'x' is something here
-  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".json"))
-  write(toJSON(list(value=x)), fn)
-}
+
+message("All outputs saved successfully.")
