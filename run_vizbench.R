@@ -111,6 +111,39 @@ write_csv_gz <- function(x, path) {
   readr::write_csv(as.data.frame(x), file = path)
 }
 
+get_metadata_df <- function(obj) {
+  if (inherits(obj, "Seurat")) {
+    return(obj@meta.data)
+  }
+
+  if (inherits(obj, "SingleCellExperiment")) {
+    return(as.data.frame(SingleCellExperiment::colData(obj)))
+  }
+
+  stop("Unsupported object type for metadata extraction: ", paste(class(obj), collapse = ", "))
+}
+
+message_meta_table <- function(obj, col) {
+  meta <- get_metadata_df(obj)
+
+  if (col %in% colnames(meta)) {
+    message(
+      col, " summary:\n",
+      paste(capture.output(table(meta[[col]], useNA = "ifany")), collapse = "\n")
+    )
+  } else {
+    message("Metadata column '", col, "' not found; skipping ", col, " table.")
+  }
+}
+
+message_object_summary <- function(obj) {
+  message("Object dimensions: ", paste(dim(obj), collapse = " x "))
+
+  message_meta_table(obj, "celltype")
+  message_meta_table(obj, "batch")
+  message_meta_table(obj, "condition")
+}
+
 ## -----------------------------------------------------------------------------
 ## Arguments
 ## -----------------------------------------------------------------------------
@@ -419,33 +452,11 @@ x <- fun(as.list(args))
 
 mean_par <- NULL
 var_par <- NULL
+
 if(args$what == "rawdata"){
-  message("Object dimensions: ", paste(dim(x), collapse = " x "))
-  if ("celltype" %in% colnames(x@meta.data)) {
-    message(
-    "Celltype summary:\n",
-    paste(capture.output(table(x$celltype, useNA = "ifany")), collapse = "\n")
-    )
-  } else {
-    message("Metadata column 'celltype' not found; skipping celltype table.")
-  }
-  if ("batch" %in% colnames(x@meta.data)) {
-    message(
-      "Batch summary:\n",
-      paste(capture.output(table(x$batch, useNA = "ifany")), collapse = "\n")
-    )
-  } else {
-    message("Metadata column 'batch' not found; skipping batch table.")
-  }
-  if ("condition" %in% colnames(x@meta.data)) {
-    message(
-      "Condition summary:\n",
-      paste(capture.output(table(x$condition, useNA = "ifany")), collapse = "\n")
-  )
-  } else {
-    message("Metadata column 'condition' not found; skipping condition table.")
-  }
+  message_object_summary(x)
 }
+  
 if (args$what == "simulate") {
   if (!is.list(x) || !all(c("obj", "mean_par", "var_par") %in% names(x))) {
     stop(
@@ -453,35 +464,10 @@ if (args$what == "simulate") {
       call. = FALSE
     )
   }
-
   mean_par <- x$mean_par
   var_par <- x$var_par
   x <- x$obj
-  message("Object dimensions: ", paste(dim(x), collapse = " x "))
-  if ("celltype" %in% colnames(x@meta.data)) {
-    message(
-    "Celltype summary:\n",
-    paste(capture.output(table(x$celltype, useNA = "ifany")), collapse = "\n")
-    )
-  } else {
-    message("Metadata column 'celltype' not found; skipping celltype table.")
-  }
-  if ("batch" %in% colnames(x@meta.data)) {
-    message(
-      "Batch summary:\n",
-      paste(capture.output(table(x$batch, useNA = "ifany")), collapse = "\n")
-    )
-  } else {
-    message("Metadata column 'batch' not found; skipping batch table.")
-  }
-  if ("condition" %in% colnames(x@meta.data)) {
-    message(
-      "Condition summary:\n",
-      paste(capture.output(table(x$condition, useNA = "ifany")), collapse = "\n")
-  )
-  } else {
-    message("Metadata column 'condition' not found; skipping condition table.")
-  }
+  message_object_summary(x)
 }
 
 message("Done running: ", args$flavour)
