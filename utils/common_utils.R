@@ -8,11 +8,11 @@ read_sce <- function(f) read_h5ad(f, as = "SingleCellExperiment")
 read_seurat <- function(f) read_h5ad(f, as = "Seurat")
 
 write_seurat_ad <- function(x, file, verbose = TRUE) {
-  if(verbose) message(paste("Converting", class(x), "-> AnnData."))
+  if (verbose) message(paste("Converting", class(x), "-> AnnData."))
   x.ad <- as_AnnData(x)
-  if(verbose) message(paste0("Writing: ", file, "."))
-  write_h5ad(x.ad, fn, mode = "w", compression = "gzip")
-  if(verbose) message("Done.")
+  if (verbose) message(paste0("Writing: ", file, "."))
+  write_h5ad(x.ad, file, mode = "w", compression = "gzip")
+  if (verbose) message("Done.")
 }
 
 read_normmethod <- function(f) fromJSON(paste(readLines(f), 
