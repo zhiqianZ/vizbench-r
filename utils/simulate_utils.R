@@ -320,7 +320,7 @@ scdesign3 <- function(args) {
     parallelization = "pbmcmapply"
   )
   
-  rm(fit$marginal)
+  fit$marginal <- NULL
   gc()
   
   set.seed(123)
