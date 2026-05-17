@@ -237,16 +237,20 @@ parser$add_argument("--N", type = "integer", default = 10000,
 ## use character instead of logical to avoid argparse TRUE/FALSE edge cases
 parser$add_argument("--verbose", type = "character", default = "TRUE",
                     help = "TRUE/FALSE: whether to print progress messages")
-
-parser$add_argument("--params", type = "character", default = NA_character_,
-                    help = "Optional extra parameter string passed to downstream functions")
-
 parser$add_argument("--output_dir", "-o", dest = "output_dir",
                     type = "character", default = getwd(),
                     help = "Output directory where files will be saved")
 parser$add_argument("--name", "-n", dest = "name",
                     type = "character", required = TRUE,
                     help = "Dataset/run name used as output file prefix")
+
+## adaptive parameters tuning for scDEED and IntegrateRigor
+parser$add_argument(
+  "--parameters",
+  type = "character",
+  default = "{}",
+  help = "JSON string specifying parameter ranges for scDEED and IntegrateRigor, e.g., --parameters '{"theta":[2,4,8],"nclust":[80,100,120]}'"
+)
 
 ## stage input/output arguments
 parser$add_argument("--rawdata.ad", type = "character",
