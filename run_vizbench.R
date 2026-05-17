@@ -419,7 +419,33 @@ x <- fun(as.list(args))
 
 mean_par <- NULL
 var_par <- NULL
-
+if(args$what == "rawdata"){
+  message("Object dimensions: ", paste(dim(x), collapse = " x "))
+  if ("celltype" %in% colnames(x@meta.data)) {
+    message(
+    "Celltype summary:\n",
+    paste(capture.output(table(x$celltype, useNA = "ifany")), collapse = "\n")
+    )
+  } else {
+    message("Metadata column 'celltype' not found; skipping celltype table.")
+  }
+  if ("batch" %in% colnames(x@meta.data)) {
+    message(
+      "Batch summary:\n",
+      paste(capture.output(table(x$batch, useNA = "ifany")), collapse = "\n")
+    )
+  } else {
+    message("Metadata column 'batch' not found; skipping batch table.")
+  }
+  if ("condition" %in% colnames(x@meta.data)) {
+    message(
+      "Condition summary:\n",
+      paste(capture.output(table(x$condition, useNA = "ifany")), collapse = "\n")
+  )
+  } else {
+    message("Metadata column 'condition' not found; skipping condition table.")
+  }
+}
 if (args$what == "simulate") {
   if (!is.list(x) || !all(c("obj", "mean_par", "var_par") %in% names(x))) {
     stop(
