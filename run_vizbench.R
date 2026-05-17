@@ -29,23 +29,32 @@ parser$add_argument("--what",
 parser$add_argument("--flavour", 
                     choices = c("mouse_pancreas", "human_IFALD_liver", "human_atheroma", "human_covid_blood","human_glaucoma_pbmc", "human_colorectal_liver", 
                                 "human_prefrontal_cortex", "human_lung_atlas", "human_liver_atlas","human_pbmc", "macaque_retina_fovea", "mouse_cortex",
-                                "mouse_intestine", "mouse_lung", "human_pancreas", "human_lung", "human_liver",# raw data
-                                "scdesign3",                                                                                         # simulate
+                                "mouse_intestine", "mouse_lung", "human_pancreas", "human_lung", "human_liver", # raw data
+                                "scdesign3", "raw",                                                                                  # simulate
                                 "log1pCP10k", "log1pCPM", "sctransform", "log1pPF", "PFlog1pPF", "log1pCPMedian", "sanity",          # normalize
                                 "harmony", "fastMNN", "SeuratCCA", "SeuratRPCA", "LIGER", "scVI", 
                                 "harmony-integrateRigor", "fastMNN-integrateRigor", "SeuratCCA-integrateRigor","SeuratRPCA-integrateRigor",
                                 "LIGER-integrateRigor", "scVI-integrateRigor", # integrate
                                 "SeuratUMAP", "scanpyUMAP", "BHtSNE", "FItSNE", "densMAP", "denSNE", "PHATE", "graphFA", "BHtSNE-scDEED",
-                                "SeuratUMAP-scDEED", "FItSNE-scDEED", "scanpyUMAP-scDEED",           # visualize
-                                "celltype_shape", "batch_mixture", "distance_preservation", "variance_preservation",
-                                "variance_samplesize", "library_size", "zero_proportion", "celltype_separation"),                    # metrics
+                                "SeuratUMAP-scDEED", "FItSNE-scDEED", "scanpyUMAP-scDEED", "densMAP-scDEED"     # visualize
+                                "celltype_shape", 
+                                "batch_mixture", 
+                                "batch_mixture_condition",
+                                "distance_preservation", 
+                                "variance_preservation",
+                                "variance_samplesize", 
+                                "library_size", 
+                                "zero_proportion", 
+                                "celltype_separation",
+                                "cLISI",
+                                "silhouette"),                    # metrics
                     required = TRUE, 
                     help = "Module to run: name depends on the 'what'")
 
 parser$add_argument("--ncells", type = "integer", default = 1000000,
                     help = "number of cells to simulate")
 
-parser$add_argument("--ngenes", type = "integer", default = 2000,
+parser$add_argument("--ngenes", type = "integer", default = 3000,
                     help = "number of genes to simulate")
 
 parser$add_argument("--nthreads", type = "integer", default = 10,
