@@ -18,6 +18,13 @@ write_seurat_ad <- function(x, file, verbose = TRUE) {
 read_normmethod <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$normalize
 
+parse_parameters <- function(parameters) {
+  if (is.null(parameters) || !nzchar(parameters)) {
+    return(list())
+  }
+  jsonlite::fromJSON(parameters, simplifyVector = FALSE)
+}
+
 read_hvgs <- function(f) fromJSON(paste(readLines(f), 
                                               collapse=""))$hvgs
 
