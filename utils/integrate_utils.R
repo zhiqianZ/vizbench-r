@@ -145,7 +145,7 @@ fastMNN = function(args) {
       verbose = TRUE,
       batch = so$batch,
       features = VariableFeatures(so),
-      assay.type = "scaledata"
+      assay.type = "scale.data"
     )
   }
   so <- JoinLayers(so)
