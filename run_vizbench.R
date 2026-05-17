@@ -301,7 +301,7 @@ message("Selected stage: ", args$what)
 message("Base stage: ", stage)
 message("Branch: ", ifelse(is.na(branch), "none", branch))
 message("Routine selected: ", args$flavour)
-message("Additional parameters: ", args$params)
+message("Additional parameters for tuning: ", args$parameters)
 message("Name: ", args$name)
 message("Output directory: ", args$output_dir)
 message("Verbose: ", args$verbose)
@@ -482,9 +482,15 @@ if (stage == "integrate") {
 }
 
 ## Simulation parameter outputs
+## Simulation parameter and metadata outputs
 if (args$what == "simulate") {
-  mean_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, "_mean.csv.gz"))
-  var_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, "_var.csv.gz"))
+  prefix <- file.path(args$output_dir, paste0(args$name, "_", args$what))
+
+  mean_path <- paste0(prefix, "_mean.csv.gz")
+  var_path <- paste0(prefix, "_var.csv.gz")
+  celltype_path <- paste0(prefix, "_celltype.csv.gz")
+  batch_path <- paste0(prefix, "_batch.csv.gz")
+  condition_path <- paste0(prefix, "_condition.csv.gz")
 
   if (args$verbose) {
     message("Writing mean parameters: ", mean_path)
@@ -495,6 +501,31 @@ if (args$what == "simulate") {
     message("Writing variance parameters: ", var_path)
   }
   write_csv_gz(var_par, var_path)
+
+  write_meta_col <- function(obj, col, path) {
+    if (col %in% colnames(obj@meta.data)) {
+      out <- data.frame(
+        cell = colnames(obj),
+        value = as.character(obj[[col, drop = TRUE]]),
+        stringsAsFactors = FALSE
+      )
+    } else {
+      out <- data.frame(
+        cell = colnames(obj),
+        value = NA_character_,
+        stringsAsFactors = FALSE
+      )
+    }
+
+    if (args$verbose) {
+      message("Writing ", col, " metadata: ", path)
+    }
+
+    readr::write_csv(out, path)
+  }
+  write_meta_col(x, "celltype", celltype_path)
+  write_meta_col(x, "batch", batch_path)
+  write_meta_col(x, "condition", condition_path)
 }
 
 ## Visualization outputs
