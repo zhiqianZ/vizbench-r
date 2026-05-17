@@ -193,38 +193,33 @@ load_pkgs <- function() {
     args$simulate_mean.csv.gz,
     file.path(args$output_dir, paste0(args$name, "_simulate_mean.csv.gz"))
   )
-  
+
   var_file_candidates <- c(
     args$simulate_var.csv.gz,
     file.path(args$output_dir, paste0(args$name, "_simulate_var.csv.gz"))
   )
-  
+
   mean_file_candidates <- mean_file_candidates[
     !is.na(mean_file_candidates) & nzchar(mean_file_candidates)
   ]
-  
+
   var_file_candidates <- var_file_candidates[
     !is.na(var_file_candidates) & nzchar(var_file_candidates)
   ]
-  
+
   mean_file <- mean_file_candidates[file.exists(mean_file_candidates)][1]
   var_file <- var_file_candidates[file.exists(var_file_candidates)][1]
-  
+
   if (is.na(mean_file) || is.na(var_file)) {
-    stop(
-      "Cannot find existing scDesign3 parameter files for real data.\n",
-      "Expected files such as:\n",
-      file.path(args$output_dir, paste0(args$name, "_simulate_mean.csv.gz")), "\n",
-      file.path(args$output_dir, paste0(args$name, "_simulate_var.csv.gz")), "\n",
-      "Or pass --simulate_mean.csv.gz and --simulate_var.csv.gz explicitly."
-    )
+    return(NULL)
   }
-  
+
   list(
     mean_file = mean_file,
     var_file = var_file
   )
 }
+
 
 scdesign3 <- function(args) {
   prepared <- .prepare_real_counts(args)
@@ -293,30 +288,74 @@ scdesign3 <- function(args) {
 
 real <- function(args) {
   prepared <- .prepare_real_counts(args)
-  
-  seurat.obj <- CreateSeuratObject(
+
+  seurat.obj <- Seurat::CreateSeuratObject(
     prepared$counts,
     meta.data = prepared$coldat
   )
-  
+
   par_files <- .find_existing_parameter_files(args)
-  
-  message("Reading existing mean parameters: ", par_files$mean_file)
-  message("Reading existing variance parameters: ", par_files$var_file)
-  
-  mean_par <- readr::read_csv(
-    par_files$mean_file,
-    show_col_types = FALSE
-  )
-  
-  var_par <- readr::read_csv(
-    par_files$var_file,
-    show_col_types = FALSE
-  )
-  
+
+  if (!is.null(par_files)) {
+    message("Reading existing mean parameters: ", par_files$mean_file)
+    message("Reading existing variance parameters: ", par_files$var_file)
+
+    mean_par <- readr::read_csv(
+      par_files$mean_file,
+      show_col_types = FALSE
+    )
+
+    var_par <- readr::read_csv(
+      par_files$var_file,
+      show_col_types = FALSE
+    )
+
+  } else {
+    message("Existing mean/variance parameter files not found.")
+    message("Fitting scDesign3 marginal model to obtain parameters for real data.")
+
+    fit <- .fit_scdesign3(
+      counts = prepared$counts,
+      coldat = prepared$coldat,
+      args = args
+    )
+
+    par_tabs <- .make_parameter_tables(
+      seurat.obj = seurat.obj,
+      para = fit$para
+    )
+
+    mean_par <- par_tabs$mean_par
+    var_par <- par_tabs$var_par
+  }
+
+  count_genes <- rownames(seurat.obj)
+  mean_genes <- colnames(mean_par)[-(1:2)]
+  var_genes <- colnames(var_par)[-(1:2)]
+
+  if (!identical(count_genes, mean_genes)) {
+    stop(
+      "Gene mismatch between real counts and mean_par.\n",
+      "This usually means --ngenes, filtering, or HVG selection differs between runs."
+    )
+  }
+
+  if (!identical(count_genes, var_genes)) {
+    stop(
+      "Gene mismatch between real counts and var_par.\n",
+      "This usually means --ngenes, filtering, or HVG selection differs between runs."
+    )
+  }
+
   list(
     obj = seurat.obj,
     mean_par = mean_par,
     var_par = var_par
   )
 }
+
+
+
+
+
+
