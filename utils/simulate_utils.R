@@ -60,7 +60,7 @@ load_pkgs <- function() {
   )
 }
 
-.fit_scdesign3 <- function(counts, coldat, args) {
+.fit_marginal <- function(counts, coldat, args) {
   nthreads <- args$nthreads
   ncells <- args$ncells
   
@@ -188,35 +188,99 @@ load_pkgs <- function() {
   )
 }
 
-.find_existing_parameter_files <- function(args) {
-  mean_file_candidates <- c(
-    args$simulate_mean.csv.gz,
-    file.path(args$output_dir, paste0(args$name, "_simulate_mean.csv.gz"))
-  )
+.find_existing_parameter_files <- function(args, max_up = 5) {
+  start_dir <- normalizePath(args$output_dir, mustWork = FALSE)
 
-  var_file_candidates <- c(
-    args$simulate_var.csv.gz,
-    file.path(args$output_dir, paste0(args$name, "_simulate_var.csv.gz"))
-  )
+  if (!dir.exists(start_dir)) {
+    start_dir <- dirname(start_dir)
+  }
 
-  mean_file_candidates <- mean_file_candidates[
-    !is.na(mean_file_candidates) & nzchar(mean_file_candidates)
-  ]
+  ## Find the nearest ancestor named "simulate".
+  ## Stop there. Do not continue beyond the dataset-level simulate directory.
+  curr <- start_dir
+  simulate_dir <- NULL
 
-  var_file_candidates <- var_file_candidates[
-    !is.na(var_file_candidates) & nzchar(var_file_candidates)
-  ]
+  for (i in seq_len(max_up)) {
+    if (basename(curr) == "simulate") {
+      simulate_dir <- curr
+      break
+    }
 
-  mean_file <- mean_file_candidates[file.exists(mean_file_candidates)][1]
-  var_file <- var_file_candidates[file.exists(var_file_candidates)][1]
+    parent <- dirname(curr)
+    if (identical(parent, curr)) break
+    curr <- parent
+  }
 
-  if (is.na(mean_file) || is.na(var_file)) {
+  if (is.null(simulate_dir)) {
+    message("No ancestor directory named 'simulate' found from: ", start_dir)
     return(NULL)
   }
 
+  scdesign3_dir <- file.path(simulate_dir, "scdesign3")
+
+  if (!dir.exists(scdesign3_dir)) {
+    message("No sibling scdesign3 directory found at: ", scdesign3_dir)
+    return(NULL)
+  }
+
+  message("Searching existing scDesign3 parameters under: ", scdesign3_dir)
+
+  mean_files <- list.files(
+    scdesign3_dir,
+    pattern = "_simulate_mean\\.csv\\.gz$",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+
+  var_files <- list.files(
+    scdesign3_dir,
+    pattern = "_simulate_var\\.csv\\.gz$",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+
+  mean_files <- mean_files[file.exists(mean_files)]
+  var_files <- var_files[file.exists(var_files)]
+
+  if (length(mean_files) == 0 || length(var_files) == 0) {
+    message("No mean/var files found under: ", scdesign3_dir)
+    return(NULL)
+  }
+
+  mean_prefix <- sub("_simulate_mean\\.csv\\.gz$", "", basename(mean_files))
+  var_prefix <- sub("_simulate_var\\.csv\\.gz$", "", basename(var_files))
+
+  common_prefix <- intersect(mean_prefix, var_prefix)
+
+  if (length(common_prefix) == 0) {
+    message("Found mean/var files, but could not pair them by prefix.")
+    return(NULL)
+  }
+
+  ## Prefer exact args$name match if available.
+  exact_prefix <- common_prefix[common_prefix == args$name]
+
+  if (length(exact_prefix) == 1) {
+    chosen_prefix <- exact_prefix
+  } else if (length(common_prefix) == 1) {
+    chosen_prefix <- common_prefix
+  } else {
+    stop(
+      "Multiple scDesign3 parameter file pairs found under:\n",
+      scdesign3_dir,
+      "\nCandidates:\n",
+      paste(common_prefix, collapse = "\n"),
+      "\nCannot safely choose one. Please ensure there is only one pair in this dataset's scdesign3 directory, or make the scdesign3 output prefix match args$name.",
+      call. = FALSE
+    )
+  }
+
+  mean_file <- mean_files[mean_prefix == chosen_prefix][1]
+  var_file <- var_files[var_prefix == chosen_prefix][1]
+
   list(
-    mean_file = mean_file,
-    var_file = var_file
+    mean_file = normalizePath(mean_file),
+    var_file = normalizePath(var_file)
   )
 }
 
@@ -227,7 +291,7 @@ scdesign3 <- function(args) {
   counts <- prepared$counts
   coldat <- prepared$coldat
   
-  fit <- .fit_scdesign3(
+  fit <- .fit_marginal(
     counts = counts,
     coldat = coldat,
     args = args
@@ -314,7 +378,7 @@ real <- function(args) {
     message("Existing mean/variance parameter files not found.")
     message("Fitting scDesign3 marginal model to obtain parameters for real data.")
 
-    fit <- .fit_scdesign3(
+    fit <- .fit_marginal(
       counts = prepared$counts,
       coldat = prepared$coldat,
       args = args
