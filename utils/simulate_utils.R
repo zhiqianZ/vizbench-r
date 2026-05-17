@@ -7,6 +7,16 @@ load_pkgs <- function() {
   library(readr)
 }
 
+.align_parameter_genes <- function(par_df, count_genes, label_cols = c("batch", "celltype")) {
+  par_genes <- setdiff(colnames(par_df), label_cols)
+
+  if (!setequal(count_genes, par_genes)) {
+    return(NULL)
+  }
+
+  par_df[, c(label_cols, count_genes), drop = FALSE]
+}
+
 .prepare_real_counts <- function(args) {
   sce <- read_sce(args$rawdata.ad)
   
@@ -350,6 +360,8 @@ scdesign3 <- function(args) {
   )
 }
 
+
+
 real <- function(args) {
   prepared <- .prepare_real_counts(args)
 
@@ -357,6 +369,12 @@ real <- function(args) {
     prepared$counts,
     meta.data = prepared$coldat
   )
+
+  count_genes <- rownames(seurat.obj)
+
+  refit_parameters <- FALSE
+  mean_par <- NULL
+  var_par <- NULL
 
   par_files <- .find_existing_parameter_files(args)
 
@@ -374,8 +392,26 @@ real <- function(args) {
       show_col_types = FALSE
     )
 
+    mean_par_aligned <- .align_parameter_genes(mean_par, count_genes)
+    var_par_aligned <- .align_parameter_genes(var_par, count_genes)
+
+    if (is.null(mean_par_aligned) || is.null(var_par_aligned)) {
+      message(
+        "Gene set mismatch between real counts and existing mean/variance parameters. ",
+        "Refitting scDesign3 marginal model."
+      )
+      refit_parameters <- TRUE
+    } else {
+      mean_par <- mean_par_aligned
+      var_par <- var_par_aligned
+    }
+
   } else {
     message("Existing mean/variance parameter files not found.")
+    refit_parameters <- TRUE
+  }
+
+  if (refit_parameters) {
     message("Fitting scDesign3 marginal model to obtain parameters for real data.")
 
     fit <- .fit_marginal(
@@ -389,26 +425,24 @@ real <- function(args) {
       para = fit$para
     )
 
-    mean_par <- par_tabs$mean_par
-    var_par <- par_tabs$var_par
-  }
+    mean_par <- .align_parameter_genes(par_tabs$mean_par, count_genes)
+    var_par <- .align_parameter_genes(par_tabs$var_par, count_genes)
 
-  count_genes <- rownames(seurat.obj)
-  mean_genes <- colnames(mean_par)[-(1:2)]
-  var_genes <- colnames(var_par)[-(1:2)]
+    if (is.null(mean_par)) {
+      stop(
+        "Gene set mismatch between real counts and refitted mean_par.\n",
+        "Please check .prepare_real_counts(), .fit_marginal(), and .make_parameter_tables().",
+        call. = FALSE
+      )
+    }
 
-  if (!identical(count_genes, mean_genes)) {
-    stop(
-      "Gene mismatch between real counts and mean_par.\n",
-      "This usually means --ngenes, filtering, or HVG selection differs between runs."
-    )
-  }
-
-  if (!identical(count_genes, var_genes)) {
-    stop(
-      "Gene mismatch between real counts and var_par.\n",
-      "This usually means --ngenes, filtering, or HVG selection differs between runs."
-    )
+    if (is.null(var_par)) {
+      stop(
+        "Gene set mismatch between real counts and refitted var_par.\n",
+        "Please check .prepare_real_counts(), .fit_marginal(), and .make_parameter_tables().",
+        call. = FALSE
+      )
+    }
   }
 
   list(
@@ -417,9 +451,6 @@ real <- function(args) {
     var_par = var_par
   )
 }
-
-
-
 
 
 
