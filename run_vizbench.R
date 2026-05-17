@@ -277,7 +277,7 @@ parser$add_argument("--visualize_count.csv.gz", type = "character",
 ## Python / reticulate
 parser$add_argument("--py_path", type = "character", default = "/usr/bin/python3",
                     help = "Python path for reticulate")
-parser$add_argument("--scvi_conda", type = "character", default = NA_character_,
+parser$add_argument("--scvi_conda", type = "character", default = "/usr/bin/python3",
                     help = "Optional scVI conda/Python environment identifier")
 
 args <- parser$parse_args()
