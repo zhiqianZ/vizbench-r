@@ -249,7 +249,7 @@ parser$add_argument(
   "--parameters",
   type = "character",
   default = "{}",
-  help = "JSON string specifying parameter ranges for scDEED and IntegrateRigor, e.g., --parameters '{"theta":[2,4,8],"nclust":[80,100,120]}'"
+  help = "JSON string specifying parameter ranges for scDEED and IntegrateRigor, e.g., --parameters '{\"theta\":[2,4,8],\"nclust\":[80,100,120]}'"
 )
 
 ## stage input/output arguments
