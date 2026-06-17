@@ -9,6 +9,7 @@ load_pkgs <- function() {
   library(anndataR)
   library(rjson)
   library(irlba)
+  library(integrateRigor)
 }
                 
 find_hvgs_seuratv5 <- function(seurat.obj, nfeatures = 2000) {
@@ -16,6 +17,36 @@ find_hvgs_seuratv5 <- function(seurat.obj, nfeatures = 2000) {
                                      selection.method = "vst", 
                                      nfeatures = nfeatures)
   VariableFeatures(seurat.obj)
+}
+
+
+harmony_integrateRigor = function(args){
+  message("Running Harmony with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$normalize.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.03)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  theta = c(2, 4, 8)
+  nclust = c(80, 100, 120)
+  param = make.parameter.df(theta, nclust)
+  obj = obj[bsg, ]
+  if(norm_method != "sctransform"){
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    hvgs <- find_hvgs_seuratv5(obj, nhvgs)
+    VariableFeatures(obj) <- hvgs
+    obj <- ScaleData(obj) 
+  }else{
+    hvgs <- rownames(obj)
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    VariableFeatures(obj) <- hvgs
+  }
+  obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
+  obj = IntegrateRigor.ParameterS(obj, method = Harmony, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.03)
+  obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  return(obj)
 }
 
 harmony = function(args) {
