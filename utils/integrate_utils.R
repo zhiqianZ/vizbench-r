@@ -9,7 +9,7 @@ load_pkgs <- function() {
   library(anndataR)
   library(rjson)
   library(irlba)
-  library(integrateRigor)
+  library(IntegrateRigor)
 }
                 
 find_hvgs_seuratv5 <- function(seurat.obj, nfeatures = 2000) {
