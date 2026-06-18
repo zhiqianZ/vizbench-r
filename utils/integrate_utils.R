@@ -26,7 +26,7 @@ harmony_integrateRigor = function(args){
   npcs <- args$npcs
   norm_method <- read_normmethod(args$normalize.json)
   obj <- read_seurat(args$normalize.ad)
-  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.03)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
   obj = BatchStableGenes(obj, plot = T)
   bsg = obj@misc$batch.stable.genes
   theta = c(2, 4, 8)
@@ -44,7 +44,7 @@ harmony_integrateRigor = function(args){
     VariableFeatures(obj) <- hvgs
   }
   obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
-  obj = IntegrateRigor.ParameterS(obj, method = Harmony, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.03)
+  obj = IntegrateRigor.ParameterS(obj, method = Harmony, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   return(obj)
 }
@@ -69,6 +69,34 @@ harmony = function(args) {
   so <- RunHarmony(so, "batch", reduction.save = "integrated")
   so <- JoinLayers(so)
   return(so)
+}
+
+SeuratRPCA_integrateRigor = function(args){
+  message("Running RPCA with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$normalize.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  k.weight = seq(60,140,20)
+  param = make.parameter.df(k.weight)
+  obj = obj[bsg, ]
+  if(norm_method != "sctransform"){
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    hvgs <- find_hvgs_seuratv5(obj, nhvgs)
+    VariableFeatures(obj) <- hvgs
+    obj <- ScaleData(obj) 
+  }else{
+    hvgs <- rownames(obj)
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    VariableFeatures(obj) <- hvgs
+  }
+  obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
+  obj = IntegrateRigor.ParameterS(obj, method = RPCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
+  obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  return(obj)
 }
 
 SeuratRPCA = function(args){
@@ -107,6 +135,33 @@ SeuratRPCA = function(args){
   return(so)
 }
 
+SeuratCCA_integrateRigor = function(args){
+  message("Running CCA with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$normalize.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  k.weight = seq(60,140,20)
+  param = make.parameter.df(k.weight)
+  obj = obj[bsg, ]
+  if(norm_method != "sctransform"){
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    hvgs <- find_hvgs_seuratv5(obj, nhvgs)
+    VariableFeatures(obj) <- hvgs
+    obj <- ScaleData(obj) 
+  }else{
+    hvgs <- rownames(obj)
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    VariableFeatures(obj) <- hvgs
+  }
+  obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
+  obj = IntegrateRigor.ParameterS(obj, method = CCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
+  obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  return(obj)
+}
 
 SeuratCCA = function(args){
   #ns <- asNamespace("Seurat")
@@ -181,6 +236,33 @@ fastMNN = function(args) {
   }
   so <- JoinLayers(so)
   return(so)
+}
+
+LIGER_integrateRigor = function(args){
+  message("Running RPCA with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$normalize.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  obj = obj[bsg, ]
+  
+  obj <- obj %>%
+     normalize() %>%
+     selectGenes(nGenes = nhvgs) %>%
+     scaleNotCenter()
+   obj <- obj %>%
+     runINMF(k = npcs) %>%
+     quantileNorm()
+   obj[["integrated"]] = obj[["inmfNorm"]]
+   obj <- JoinLayers(obj)
+   hvgs = rownames(obj[['RNA']]$ligerScaleData)
+   obj = obj[hvgs,]
+  return(so)
+  
+  return(obj)
 }
 
 LIGER = function(args){
