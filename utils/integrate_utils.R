@@ -207,7 +207,7 @@ SeuratCCA = function(args){
   return(so)
 }
 
-FastMNN_integrateRigor = function(args){
+fastMNN_integrateRigor = function(args){
   message("Running FastMNN with IntegrateRigor")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
