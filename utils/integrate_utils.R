@@ -46,6 +46,7 @@ harmony_integrateRigor = function(args){
   obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
   obj = IntegrateRigor.ParameterS(obj, method = Harmony, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  obj[['integrated']] = obj[['integrated.bsg.optimal.harmony']]
   return(obj)
 }
 
@@ -96,6 +97,7 @@ SeuratRPCA_integrateRigor = function(args){
   obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
   obj = IntegrateRigor.ParameterS(obj, method = RPCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  obj[['integrated']] = obj[['integrated.bsg.optimal.rpca']]
   return(obj)
 }
 
@@ -160,6 +162,7 @@ SeuratCCA_integrateRigor = function(args){
   obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
   obj = IntegrateRigor.ParameterS(obj, method = CCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  obj[['integrated']] = obj[['integrated.bsg.optimal.cca']]
   return(obj)
 }
 
@@ -204,6 +207,35 @@ SeuratCCA = function(args){
   return(so)
 }
 
+FastMNN_integrateRigor = function(args){
+  message("Running FastMNN with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$normalize.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  k = c(10, seq(20,100,40))
+  param = make.parameter.df(k)
+  obj = obj[bsg, ]
+  if(norm_method != "sctransform"){
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    hvgs <- find_hvgs_seuratv5(obj, nhvgs)
+    VariableFeatures(obj) <- hvgs
+    obj <- ScaleData(obj) 
+  }else{
+    hvgs <- rownames(obj)
+    obj[["RNA"]] <- split(obj[["RNA"]], f = obj$batch)
+    VariableFeatures(obj) <- hvgs
+  }
+  obj <- RunPCA(obj, features = VariableFeatures(obj), npcs = npcs)
+  obj = IntegrateRigor.ParameterS(obj, method = FastMNN, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1)
+  obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  obj[['integrated']] = obj[['integrated.bsg.optimal.fastmnn']]
+  return(obj)
+}
+
 fastMNN = function(args) {
   message("Running FastMNN")
   nhvgs <- args$nhvgs
@@ -243,7 +275,7 @@ LIGER_integrateRigor = function(args){
   nhvgs <- args$nhvgs
   npcs <- args$npcs
   norm_method <- read_normmethod(args$normalize.json)
-  obj <- read_seurat(args$normalize.ad)
+  obj <- read_seurat(args$simulate.ad)
   obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
   obj = BatchStableGenes(obj, plot = T)
   bsg = obj@misc$batch.stable.genes
@@ -260,7 +292,6 @@ LIGER_integrateRigor = function(args){
    obj <- JoinLayers(obj)
    hvgs = rownames(obj[['RNA']]$ligerScaleData)
    obj = obj[hvgs,]
-  return(so)
   
   return(obj)
 }
@@ -285,6 +316,23 @@ LIGER = function(args){
    return(so)
 }
 
+scVI_integrateRigor = function(args){
+  message("Running FastMNN with IntegrateRigor")
+  nhvgs <- args$nhvgs
+  npcs <- args$npcs
+  norm_method <- read_normmethod(args$normalize.json)
+  obj <- read_seurat(args$simulate.ad)
+  obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
+  obj = BatchStableGenes(obj, plot = T)
+  bsg = obj@misc$batch.stable.genes
+  nhidden = c(64, 96, 128, 192, 256)
+  param = make.parameter.df(nhidden)
+  obj = obj[bsg, ]
+  obj = IntegrateRigor.ParameterS(obj, method = scVI, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1)
+  obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
+  obj[['integrated']] = obj[['integrated.bsg.optimal.scvi']]
+  return(obj)
+}
 
 scVI = function(args){
   message("Running scVI")
