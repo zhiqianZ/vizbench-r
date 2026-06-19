@@ -271,7 +271,7 @@ fastMNN = function(args) {
 }
 
 LIGER_integrateRigor = function(args){
-  message("Running RPCA with IntegrateRigor")
+  message("Running LIGER with IntegrateRigor")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
   norm_method <- read_normmethod(args$normalize.json)
@@ -316,10 +316,38 @@ LIGER = function(args){
    return(so)
 }
 
+scVI.self <- function(
+    seurat.obj,
+    new.reduction,
+    ndims,
+    default.assay,
+    scvi_conda,
+    verbose = FALSE,
+    ...
+) {
+  features <- Seurat::VariableFeatures(object = seurat.obj, assay = default.assay)
+  message(scvi_conda)
+  Seurat::IntegrateLayers(
+    object = seurat.obj,
+    method = scVIIntegration_custom,
+    new.reduction = new.reduction,
+    verbose = verbose,
+    conda_env = scvi_conda,
+    features = features,
+    layers = "counts",
+    orig.reduction = NULL,
+    scale.layer = NULL,
+    assay = default.assay,
+    ndims = ndims,
+    ...
+  )
+}
+
 scVI_integrateRigor = function(args){
-  message("Running FastMNN with IntegrateRigor")
+  message("Running scVI with IntegrateRigor")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
+  scvi_conda <- args$scvi_conda
   norm_method <- read_normmethod(args$normalize.json)
   obj <- read_seurat(args$simulate.ad)
   obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
@@ -328,7 +356,7 @@ scVI_integrateRigor = function(args){
   nhidden = c(64, 96, 128, 192, 256)
   param = make.parameter.df(nhidden)
   obj = obj[bsg, ]
-  obj = IntegrateRigor.ParameterS(obj, method = scVI, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1)
+  obj = IntegrateRigor.ParameterS(obj, method = scVI.self, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, scvi_conda = scvi_conda)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.scvi']]
   return(obj)
