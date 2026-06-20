@@ -320,7 +320,6 @@ scVI.self <- function(
     new.reduction,
     ndims,
     default.assay,
-    scvi_conda,
     verbose = FALSE,
     ...
 ) {
@@ -354,7 +353,7 @@ scVI_integrateRigor = function(args){
   nhidden = c(64, 96, 128, 192, 256)
   param = make.parameter.df(nhidden)
   obj = obj[bsg, ]
-  obj = IntegrateRigor.ParameterS(obj, method = scVI.self, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, scvi_conda = scvi_conda)
+  obj = IntegrateRigor.ParameterS(obj, method = scVI.self, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.scvi']]
   return(obj)
