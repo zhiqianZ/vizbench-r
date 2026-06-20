@@ -274,7 +274,6 @@ LIGER_integrateRigor = function(args){
   message("Running LIGER with IntegrateRigor")
   nhvgs <- args$nhvgs
   npcs <- args$npcs
-  norm_method <- read_normmethod(args$normalize.json)
   obj <- read_seurat(args$simulate.ad)
   obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
   obj = BatchStableGenes(obj, plot = T)
@@ -348,7 +347,6 @@ scVI_integrateRigor = function(args){
   nhvgs <- args$nhvgs
   npcs <- args$npcs
   scvi_conda <- args$scvi_conda
-  norm_method <- read_normmethod(args$normalize.json)
   obj <- read_seurat(args$simulate.ad)
   obj = BatchStabilityEst(obj, batch="batch", K=5, n.cores=10, subsample=0.1)
   obj = BatchStableGenes(obj, plot = T)
