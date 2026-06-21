@@ -62,19 +62,14 @@ script_dir <- function() {
   return(getwd())
 }
 
-source_or_quit <- function(path, python = FALSE) {
+source_or_quit <- function(path) {
   if (!file.exists(path)) {
     message("Helper code not found: ", path)
     quit("no", status = 1)
   }
 
   message("Sourcing: ", path)
-
-  if (python) {
-    reticulate::source_python(path, envir = globalenv(), convert = FALSE)
-  } else {
-    source(path, local = globalenv())
-  }
+  source(path)
 }
 
 require_arg <- function(args, name, stage_context = NULL) {
@@ -407,7 +402,7 @@ if (exists("Set_Threads_BLAS_OMP", mode = "function")) {
 ## source Python helper only for stages that use Python helper code
 if (stage %in% c("normalize", "visualize")) {
   py_helper <- file.path(run_dir, "utils", paste0(stage, "_utils.py"))
-  source_or_quit(py_helper, python = TRUE)
+  reticulate::source_python(py_helper)
 }
 
 if (args$flavour == "FItSNE") {
