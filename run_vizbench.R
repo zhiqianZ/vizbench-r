@@ -392,7 +392,7 @@ if (exists("Set_Threads_BLAS_OMP", mode = "function")) {
 ## source Python helper only for stages that use Python helper code
 if (stage %in% c("normalize", "visualize")) {
   py_helper <- file.path(run_dir, "utils", paste0(stage, "_utils.py"))
-  reticulate::source_python(py_helper)
+  reticulate::source_python(py_helper, convert = FALSE)
 }
 
 if (args$flavour == "FItSNE") {
