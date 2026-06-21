@@ -71,9 +71,9 @@ source_or_quit <- function(path, python = FALSE) {
   message("Sourcing: ", path)
 
   if (python) {
-    reticulate::source_python(path, convert = FALSE)
+    reticulate::source_python(path, envir = globalenv(), convert = FALSE)
   } else {
-    source(path)
+    source(path, local = globalenv())
   }
 }
 
