@@ -463,8 +463,16 @@ message("Done running: ", args$flavour)
 
 ## AnnData-like outputs
 if (stage %in% c("rawdata", "simulate", "normalize", "integrate")) {
-  ad_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".ad"))
-  write_anndata_or_seurat(x, ad_path, verbose = args$verbose)
+  # ad_path <- file.path(args$output_dir, paste0(args$name, "_", args$what, ".ad"))
+  fn <- file.path(args$output_dir, paste0(args$name,"_",args$what, ".ad"))
+  if(typeof(x)!="environment"){
+    write_seurat_ad(x, fn)
+  }else{
+    if(args$verbose) message(paste0("Writing: ", fn, "."))
+    message(ls(x))
+    x$write_h5ad(fn, compression = "gzip")
+    message("done")
+  }
 }
 
 ## Method metadata
