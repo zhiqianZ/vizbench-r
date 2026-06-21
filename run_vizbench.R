@@ -76,18 +76,6 @@ require_arg <- function(args, name, stage_context = NULL) {
   invisible(value)
 }
 
-write_anndata_or_seurat <- function(x, path, verbose = TRUE) {
-  if (verbose) {
-    message("Writing AnnData/Seurat object: ", path)
-  }
-
-  if (typeof(x) != "environment") {
-    write_seurat_ad(x, path)
-  } else {
-    x$write_h5ad(path, compression = "gzip")
-  }
-}
-
 write_json <- function(x, path) {
   write(jsonlite::toJSON(x, auto_unbox = TRUE, pretty = TRUE), path)
 }
