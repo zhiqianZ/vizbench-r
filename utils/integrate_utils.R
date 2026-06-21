@@ -324,7 +324,6 @@ scVI.self <- function(
     ...
 ) {
   features <- Seurat::VariableFeatures(object = seurat.obj, assay = default.assay)
-  message(scvi_conda)
   Seurat::IntegrateLayers(
     object = seurat.obj,
     method = scVIIntegration_custom,
