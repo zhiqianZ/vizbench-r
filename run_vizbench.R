@@ -62,16 +62,6 @@ script_dir <- function() {
   return(getwd())
 }
 
-source_or_quit <- function(path) {
-  if (!file.exists(path)) {
-    message("Helper code not found: ", path)
-    quit("no", status = 1)
-  }
-
-  message("Sourcing: ", path)
-  source(path)
-}
-
 require_arg <- function(args, name, stage_context = NULL) {
   value <- args[[name]]
 
@@ -393,7 +383,7 @@ options(future.globals.maxSize = 10^20)
 ## -----------------------------------------------------------------------------
 
 common_helper <- file.path(run_dir, "utils", "common_utils.R")
-source_or_quit(common_helper)
+source(common_helper)
 
 if (exists("Set_Threads_BLAS_OMP", mode = "function")) {
   Set_Threads_BLAS_OMP()
@@ -415,7 +405,7 @@ if (args$flavour == "FItSNE") {
 }
 
 stage_helper <- file.path(run_dir, "utils", paste0(stage, "_utils.R"))
-source_or_quit(stage_helper)
+source(stage_helper)
 
 ## -----------------------------------------------------------------------------
 ## Load stage-specific packages
