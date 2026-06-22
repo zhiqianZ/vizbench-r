@@ -351,7 +351,7 @@ scVI_integrateRigor = function(args){
     message(scvi_conda)
     seurat.obj <- IntegrateLayers(
       seurat.obj,
-      method = scVIIntegration_custom,
+      method = IntegrateRigor:::scVIIntegration_custom,
       conda_env = scvi_conda,
       new.reduction = new.reduction,
       verbose = verbose,
@@ -399,80 +399,5 @@ scVI = function(args){
   rownames(so[['integrated']]@cell.embeddings) = colnames(so)
   so <- so[hvgs, ]
   return(so)
-}
-
-
-
-scVIIntegration_custom <- function(
-    object,
-    features = NULL,
-    layers = "counts",
-    conda_env = NULL,
-    new.reduction = "integrated.dr",
-    ndimss = 30,
-    nlayers = 2,
-    nhidden = 128,
-    dropout.rate = 0.1,
-    gene_likelihood = "nb",
-    max_epochs = NULL,
-    ...) {
-  .check_package("reticulate", "for scVI integration")
-  .check_package("SeuratWrappers", "for scVI batch extraction helpers")
-
-  reticulate::use_condaenv(conda_env, required = TRUE)
-  sc <- reticulate::import("scanpy", convert = FALSE)
-  scvi <- reticulate::import("scvi", convert = FALSE)
-  scipy <- reticulate::import("scipy", convert = FALSE)
-
-  if (is.null(max_epochs)) {
-    max_epochs <- reticulate::r_to_py(max_epochs)
-  } else {
-    max_epochs <- as.integer(max_epochs)
-  }
-
-  if (inherits(object, what = "SCTAssay")) {
-    find_sct_batches <- getFromNamespace(".FindSCTBatches", "SeuratWrappers")
-    batches <- find_sct_batches(object)
-  } else {
-    find_batches <- getFromNamespace(".FindBatches", "SeuratWrappers")
-    batches <- find_batches(object, layers = layers)
-    object <- SeuratObject::JoinLayers(object = object, layers = "counts")
-  }
-
-  adata <- sc$AnnData(
-    X = scipy$sparse$csr_matrix(
-      Matrix::t(SeuratObject::LayerData(object, layer = "counts")[features, ])
-    ),
-    obs = batches,
-    var = object[[]][features, ]
-  )
-
-  scvi$model$SCVI$setup_anndata(adata, batch_key = "batch")
-
-  model <- scvi$model$SCVI(
-    adata = adata,
-    n_latent = as.integer(ndimss),
-    n_layers = as.integer(nlayers),
-    n_hidden = as.integer(nhidden),
-    dropout_rate = dropout.rate,
-    gene_likelihood = gene_likelihood
-  )
-  model$train(max_epochs = max_epochs)
-
-  latent <- model$get_latent_representation()
-  latent <- as.matrix(latent)
-  rownames(latent) <- reticulate::py_to_r(adata$obs$index$values)
-  colnames(latent) <- paste0(new.reduction, "_", seq_len(ncol(latent)))
-
-  suppressWarnings(
-    latent.dr <- SeuratObject::CreateDimReducObject(
-      embeddings = latent,
-      key = new.reduction
-    )
-  )
-
-  output.list <- list(latent.dr)
-  names(output.list) <- new.reduction
-  output.list
 }
 
