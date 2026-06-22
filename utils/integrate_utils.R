@@ -47,6 +47,8 @@ harmony_integrateRigor = function(args){
   obj = IntegrateRigor.ParameterS(obj, method = Harmony, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.harmony']]
+  features <- VariableFeatures(obj)
+  obj <- obj[features, ]
   return(obj)
 }
 
@@ -69,6 +71,8 @@ harmony = function(args) {
   so <- RunPCA(so, features = VariableFeatures(so), npcs = npcs)
   so <- RunHarmony(so, "batch", reduction.save = "integrated")
   so <- JoinLayers(so)
+  features <- VariableFeatures(so)
+  so <- so[features, ]
   return(so)
 }
 
@@ -98,6 +102,8 @@ SeuratRPCA_integrateRigor = function(args){
   obj = IntegrateRigor.ParameterS(obj, method = RPCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.rpca']]
+  features <- VariableFeatures(obj)
+  obj <- obj[features, ]
   return(obj)
 }
 
@@ -134,6 +140,8 @@ SeuratRPCA = function(args){
     )
   }
   so <- JoinLayers(so)
+  features <- VariableFeatures(so)
+  so <- so[features, ]
   return(so)
 }
 
@@ -163,6 +171,8 @@ SeuratCCA_integrateRigor = function(args){
   obj = IntegrateRigor.ParameterS(obj, method = CCA, parameter.df = param, force.run = T, ndims.score = npcs, ndims=npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.cca']]
+  features <- VariableFeatures(obj)
+  obj <- obj[features, ]
   return(obj)
 }
 
@@ -204,6 +214,8 @@ SeuratCCA = function(args){
     )
   }
   so <- JoinLayers(so)
+  features <- VariableFeatures(so)
+  so <- so[features, ]
   return(so)
 }
 
@@ -233,6 +245,8 @@ fastMNN_integrateRigor = function(args){
   obj = IntegrateRigor.ParameterS(obj, method = FastMNN, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.fastmnn']]
+  features <- VariableFeatures(obj)
+  obj <- obj[features, ]
   return(obj)
 }
 
@@ -267,6 +281,8 @@ fastMNN = function(args) {
     )
   }
   so <- JoinLayers(so)
+  features <- VariableFeatures(so)
+  so <- so[features, ]
   return(so)
 }
 
@@ -315,30 +331,6 @@ LIGER = function(args){
    return(so)
 }
 
-scVI.self <- function(
-    seurat.obj,
-    new.reduction,
-    ndims,
-    default.assay,
-    verbose = FALSE,
-    ...
-) {
-  features <- Seurat::VariableFeatures(object = seurat.obj, assay = default.assay)
-  Seurat::IntegrateLayers(
-    object = seurat.obj,
-    method = scVIIntegration,
-    new.reduction = new.reduction,
-    verbose = verbose,
-    conda_env = "/usr/bin/python3",
-    features = features,
-    layers = "counts",
-    orig.reduction = NULL,
-    scale.layer = NULL,
-    assay = default.assay,
-    ndims = ndims,
-    ...
-  )
-}
 
 scVI_integrateRigor = function(args){
   message("Running scVI with IntegrateRigor")
@@ -354,9 +346,26 @@ scVI_integrateRigor = function(args){
   obj = obj[bsg, ]
   hvgs <- find_hvgs_seuratv5(obj, nhvgs)
   VariableFeatures(obj) <- hvgs
+  scVI.self <- function(seurat.obj) {
+    # features <- VariableFeatures(object = seurat.obj, assay = default.assay)
+    message(scvi_conda)
+    seurat.obj <- IntegrateLayers(
+      seurat.obj,
+      method = scVIIntegration,
+      conda_env = scvi_conda,
+      verbose = T,
+      features = hvgs,
+      ndims = npcs,
+      layers = "counts",
+      orig.reduction = NULL,
+      scale.layer = NULL,
+      assay = "RNA"
+    )
+  }
   obj = IntegrateRigor.ParameterS(obj, method = scVI.self, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
   obj[['integrated']] = obj[['integrated.bsg.optimal.scvi']]
+  obj <- obj[hvgs, ]
   return(obj)
 }
 
@@ -385,6 +394,7 @@ scVI = function(args){
   )
   so <- JoinLayers(so)
   rownames(so[['integrated']]@cell.embeddings) = colnames(so)
+  so <- so[hvgs, ]
   return(so)
 }
 
