@@ -346,7 +346,7 @@ scVI_integrateRigor = function(args){
   obj = obj[bsg, ]
   hvgs <- find_hvgs_seuratv5(obj, nhvgs)
   VariableFeatures(obj) <- hvgs
-  scVI.self <- function(seurat.obj, new.reduction, ndims, default.assay, verbose = FALSE, ...) {
+  scVI2 <- function(seurat.obj, new.reduction, ndims, default.assay, verbose = FALSE, ...) {
     # features <- VariableFeatures(object = seurat.obj, assay = default.assay)
     message(scvi_conda)
     seurat.obj <- IntegrateLayers(
@@ -364,9 +364,9 @@ scVI_integrateRigor = function(args){
       ...
     )
   }
-  obj = IntegrateRigor.ParameterS(obj, method = scVI.self, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, K =10)
+  obj = IntegrateRigor.ParameterS(obj, method = scVI2, parameter.df = param, force.run = T, ndims.score = npcs, ndims = npcs, subsample=0.1, K =10)
   obj[["RNA"]] <- JoinLayers(obj[["RNA"]])
-  obj[['integrated']] = obj[['integrated.bsg.optimal.scvi']]
+  obj[['integrated']] = obj[['integrated.bsg.optimal.scvi2']]
   obj <- obj[hvgs, ]
   return(obj)
 }
