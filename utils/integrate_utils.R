@@ -276,8 +276,7 @@ fastMNN = function(args) {
       new.reduction = "integrated", orig.reduction = NULL,
       verbose = TRUE,
       batch = so$batch,
-      features = VariableFeatures(so),
-      assay.type = "scale.data"
+      features = VariableFeatures(so)
     )
   }
   so <- JoinLayers(so)
