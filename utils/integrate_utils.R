@@ -271,11 +271,11 @@ fastMNN = function(args) {
     hvgs <- rownames(so)
     so[["RNA"]] <- split(so[["RNA"]], f = so$batch)
     VariableFeatures(so) <- hvgs
+    so <- RunPCA(so, npcs = npcs)
     so = IntegrateLayers(
       object = so, method = FastMNNIntegration,
       new.reduction = "integrated", orig.reduction = NULL,
       verbose = TRUE,
-      batch = so$batch,
       features = VariableFeatures(so)
     )
   }
