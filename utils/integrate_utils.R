@@ -264,7 +264,7 @@ fastMNN = function(args) {
     so <- RunPCA(so, npcs = npcs)
     so = IntegrateLayers(object = so, method = FastMNNIntegration,
                                  new.reduction = 'integrated', verbose = TRUE, 
-                                 orig.reduction = NULL,
+                                 orig.reduction = "pca",
                                  features = VariableFeatures(so),
                                  assay.type = "logcounts")
   }else{
@@ -274,7 +274,7 @@ fastMNN = function(args) {
     so <- RunPCA(so, npcs = npcs)
     so = IntegrateLayers(
       object = so, method = FastMNNIntegration,
-      new.reduction = "integrated", orig.reduction = NULL,
+      new.reduction = "integrated", orig.reduction = "pca",
       verbose = TRUE,
       features = VariableFeatures(so)
     )
