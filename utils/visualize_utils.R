@@ -17,6 +17,11 @@ GRID_UMAP <- expand.grid(
   min.dist    = c(0.1, 0.3, 0.5),
   stringsAsFactors = FALSE
 )
+GRID_SCANPY_UMAP <- expand.grid(
+  n_neighbors = c(5, 20, 30, 40, 50),
+  min_dist    = c(0.1, 0.3, 0.5),
+  stringsAsFactors = FALSE
+)
 
 GRID_TSNE <- data.frame(
   perplexity = seq(from = 20, to = 410, by = 30)
@@ -340,6 +345,36 @@ graphFA_scDEED <- function(args) {
   best <- res$best
   vis  <- .graphfa_embed(so_full, npcs = npcs, nthreads = nthreads,
                          n_neighbors = best$n_neighbors)
+
+  structure(vis, scdeed = res$num_dubious)
+}
+
+scanpyUMAP_scDEED <- function(args) {
+  message("Running scanpyUMAP + scDEED")
+  npcs     <- args$npcs
+  nthreads <- args$nthreads
+  so_full  <- read_seurat(args$integrate.ad)
+
+  p   <- prep_for_scdeed(so_full)
+  res <- scdeed_optimize(
+    p$sub, p$permuted, GRID_SCANPY_UMAP,
+    embed_fn = function(so, params) .embed_scanpy_umap(so, params, npcs, nthreads),
+    npcs = npcs
+  )
+  rm(p); gc()
+
+  best   <- res$best
+  latent <- Embeddings(so_full, "integrated")[, 1:npcs, drop = FALSE]
+
+  vis <- scanpy_embed$scanpy_umap_from_matrix(
+    latent      = latent,
+    n_neighbors = as.integer(best$n_neighbors),
+    min_dist    = as.numeric(best$min_dist),
+    n_jobs      = as.integer(nthreads),
+    seed        = 100L
+  )
+  vis <- as.matrix(vis)
+  rownames(vis) <- colnames(so_full)
 
   structure(vis, scdeed = res$num_dubious)
 }
