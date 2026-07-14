@@ -5,7 +5,7 @@ import scipy as sp
 import os
 
 
-def _neighbors_umap(latent, n_neighbors, min_dist, n_jobs=1, seed=100):
+def _neighbors_umap(latent, n_neighbors, min_dist, n_jobs=1, seed=42):
     """Core: kNN graph + UMAP layout on a raw cells x dims matrix."""
     latent = np.asarray(latent, dtype=np.float64)
 
@@ -44,7 +44,7 @@ def scanpyUMAP(args):
     )
 
 
-def scanpy_umap_from_matrix(latent, n_neighbors, min_dist, n_jobs=1, seed=100):
+def scanpy_umap_from_matrix(latent, n_neighbors, min_dist, n_jobs=1, seed=42):
     """
     Optimizer adapter. `latent` is already sliced to npcs columns by the caller.
     Called once per (original, permuted) x grid-row from the R engine.
@@ -58,7 +58,7 @@ def scanpy_umap_from_matrix(latent, n_neighbors, min_dist, n_jobs=1, seed=100):
     )
 
 
-def scanpy_umap_grid(latent, grid, n_jobs=1, seed=100):
+def scanpy_umap_grid(latent, grid, n_jobs=1, seed=42):
     """
     Optional: run a whole grid in one call, caching the kNN graph.
 
