@@ -8,7 +8,7 @@ load_pkgs <- function() {
 
 ## ---- Global ----------------------------------------------------------
 SUBSAMPLE_N <- 100000   # cells used for hyperparameter selection (all methods)
-SEED        <- 123
+SEED        <- 42
 
 ## ---- Hyperparameter grids --------------------------------------------------
 ## min.dist: 3 values, as requested.
