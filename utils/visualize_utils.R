@@ -371,7 +371,7 @@ scanpyUMAP_scDEED <- function(args) {
     n_neighbors = as.integer(best$n_neighbors),
     min_dist    = as.numeric(best$min_dist),
     n_jobs      = as.integer(nthreads),
-    seed        = 100L
+    seed        = 42L
   )
   vis <- as.matrix(vis)
   rownames(vis) <- colnames(so_full)
