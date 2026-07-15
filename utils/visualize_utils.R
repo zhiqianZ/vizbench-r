@@ -7,7 +7,7 @@ load_pkgs <- function() {
 }
 
 ## ---- Global ----------------------------------------------------------
-SUBSAMPLE_N <- 100000   # cells used for hyperparameter selection (all methods)
+SUBSAMPLE_N <- 50000   # cells used for hyperparameter selection (all methods)
 SEED        <- 42
 
 ## ---- Hyperparameter grids --------------------------------------------------
@@ -32,7 +32,7 @@ GRID_TSNE <- data.frame(
 GRID_DENSMAP <- expand.grid(
   n.neighbors = c(5, 20, 30, 40, 50),
   min.dist    = c(0.1, 0.3, 0.5),
-  dens_lambda = c(0.5, 2.0, 5.0),
+  dens_lambda = c(0.5, 2.0),
   stringsAsFactors = FALSE
 )
 
@@ -248,6 +248,20 @@ prep_for_scdeed <- function(so, n = SUBSAMPLE_N, reduction = "integrated",
                 n_jobs       = nthreads,
                 verbose = FALSE)
   Embeddings(so, "umap")
+}
+.embed_scanpy_umap <- function(so, params, npcs, nthreads) {
+  latent <- Embeddings(so, "integrated")[, 1:npcs, drop = FALSE]
+
+  vis <- scanpy_embed$scanpy_umap_from_matrix(
+    latent      = latent,
+    n_neighbors = as.integer(params$n_neighbors),
+    min_dist    = as.numeric(params$min_dist),
+    n_jobs      = as.integer(nthreads),
+    seed        = 100L
+  )
+  vis <- as.matrix(vis)
+  rownames(vis) <- colnames(so)
+  vis
 }
 
 
