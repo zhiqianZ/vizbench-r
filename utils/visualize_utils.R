@@ -7,7 +7,7 @@ load_pkgs <- function() {
 }
 
 ## ---- Global ----------------------------------------------------------
-SUBSAMPLE_N <- 10000   # cells used for hyperparameter selection (all methods)
+SUBSAMPLE_N <- 30000   # cells used for hyperparameter selection (all methods)
 SEED        <- 42
 
 ## ---- Hyperparameter grids --------------------------------------------------
@@ -252,7 +252,7 @@ prep_for_scdeed <- function(so, n = SUBSAMPLE_N, reduction = "integrated",
 .embed_scanpy_umap <- function(so, params, npcs, nthreads) {
   latent <- Embeddings(so, "integrated")[, 1:npcs, drop = FALSE]
 
-  vis <- scanpy_embed$scanpy_umap_from_matrix(
+  vis <- scanpy_umap_from_matrix(
     latent      = latent,
     n_neighbors = as.integer(params$n_neighbors),
     min_dist    = as.numeric(params$min_dist),
@@ -380,7 +380,7 @@ scanpyUMAP_scDEED <- function(args) {
   best   <- res$best
   latent <- Embeddings(so_full, "integrated")[, 1:npcs, drop = FALSE]
 
-  vis <- scanpy_embed$scanpy_umap_from_matrix(
+  vis <- scanpy_umap_from_matrix(
     latent      = latent,
     n_neighbors = as.integer(best$n_neighbors),
     min_dist    = as.numeric(best$min_dist),
