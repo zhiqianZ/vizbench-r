@@ -7,7 +7,7 @@ load_pkgs <- function() {
 }
 
 ## ---- Global ----------------------------------------------------------
-SUBSAMPLE_N <- 50000   # cells used for hyperparameter selection (all methods)
+SUBSAMPLE_N <- 10000   # cells used for hyperparameter selection (all methods)
 SEED        <- 42
 
 ## ---- Hyperparameter grids --------------------------------------------------
