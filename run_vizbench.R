@@ -203,9 +203,9 @@ parser$add_argument(
     "graphFA",
     "BHtSNE_scDEED",
     "SeuratUMAP_scDEED",
-    "FItSNE_scDEED",
     "scanpyUMAP_scDEED",
     "densMAP_scDEED",
+    "graphFA_scDEED",
 
     ## metrics
     "celltype_shape",
