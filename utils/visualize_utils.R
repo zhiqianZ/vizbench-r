@@ -103,26 +103,6 @@ PHATE <- function(args) {
   vis
 }
 
-graphFA = function(args){
-  print("Running graphFA")
-  ad = import("anndata")
-  sc = import("scanpy", convert=F)
-  fn = args$integrate.ad
-  so <- read_seurat(fn)
-  npcs <- args$npcs
-  nthreads <- args$nthreads
-  
-  temp_count = matrix(0, nrow = ncol(so), ncol = nrow(so))
-  adata = sc$AnnData(temp_count)
-  latent.method.key = "X_integrated"
-  adata$obsm[latent.method.key] = Embeddings(so,"integrated")[,1:npcs]
-  sc$pp$neighbors(adata,use_rep=latent.method.key, n_pcs=as.integer(npcs))
-  sc$tl$draw_graph(adata,layout="fa",n_jobs=as.integer(nthreads))
-  vis = as.matrix(adata$obsm$get('X_draw_graph_fa'))
-  rownames(vis) = colnames(so)
-  return(vis)
-}
-
 .graphfa_embed <- function(so, npcs, nthreads, n_neighbors) {
   sc <- reticulate::import("scanpy", convert = FALSE)
 
