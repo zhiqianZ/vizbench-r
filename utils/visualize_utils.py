@@ -35,13 +35,52 @@ def scanpyUMAP(args):
     npcs = int(args["npcs"])
 
     latent = np.asarray(adata.obsm["integrated"])[:, :npcs]   # explicit slice
-
-    return _neighbors_umap(
+    vis = _neighbors_umap(
         latent,
         n_neighbors=15,    # scanpy default
         min_dist=0.5,      # scanpy default
         n_jobs=int(args.get("nthreads", 1)),
     )
+    return vis
+    
+def scanpyUMAP(args):
+    """Baseline scanpy UMAP. Unoptimized -- scanpy defaults."""
+    print("Running scanpyUMAP")
+
+    adata = sc.read_h5ad(args["integrate.ad"])
+    npcs = int(args["npcs"])
+
+    print("adata.n_obs:", adata.n_obs)
+    print("integrated shape:", adata.obsm["integrated"].shape)
+
+    latent = np.asarray(
+        adata.obsm["integrated"]
+    )[:, :npcs]
+
+    print("latent shape:", latent.shape)
+    print("non-finite rows:",
+          np.sum(~np.isfinite(latent).all(axis=1)))
+
+    assert latent.shape[0] == adata.n_obs
+
+    vis = _neighbors_umap(
+        latent,
+        n_neighbors=15,
+        min_dist=0.5,
+        n_jobs=int(args.get("nthreads", 1)),
+    )
+
+    vis = np.asarray(vis)
+
+    print("vis shape:", vis.shape)
+
+    assert vis.ndim == 2
+    assert vis.shape[0] == adata.n_obs, (
+        f"UMAP returned {vis.shape[0]} rows, "
+        f"expected {adata.n_obs}"
+    )
+
+    return vis
 
 
 def scanpy_umap_from_matrix(latent, n_neighbors, min_dist, n_jobs=1, seed=42):
