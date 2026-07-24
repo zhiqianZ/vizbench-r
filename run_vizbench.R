@@ -529,7 +529,18 @@ if (stage == "visualize") {
     message("Writing visualization embedding: ", csv_path)
   }
 
-  write_csv_gz(x, csv_path)
+  if (!args$flavour %in% c("scanpyUMAP", "graphFA")) {
+    write_csv_gz(x, csv_path)
+  } else {
+    x_R <- reticulate::py_to_r(x)
+    con <- gzfile(csv_path, open = "wt")
+    cat(dim(x_R))
+    tryCatch({
+      write.csv(x_R, con, row.names = FALSE)
+    },finally = {
+      close(con)
+    })
+  }
 }
 
 ## Metric outputs
