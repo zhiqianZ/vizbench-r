@@ -367,7 +367,7 @@ real <- function(args) {
 
   seurat.obj <- Seurat::CreateSeuratObject(
     prepared$counts,
-    meta.data = prepared$coldat
+    meta.data = as.data.frame(prepared$coldat)
   )
 
   count_genes <- rownames(seurat.obj)
