@@ -23,7 +23,7 @@ celltype_shape = function(args) {
   celltype <- sce$celltype
   rm(sce)
   
-  val = sapply(unique(batch), function(b){
+  val = unlist(lapply(unique(batch), function(b){
     tapply(which(batch==b), celltype[batch==b], function(id){
       if(ncol(data)>2){
         svd_res = irlba(apply(data[id,], 2, function(d){d-mean(d)}), nv=2)
@@ -32,7 +32,7 @@ celltype_shape = function(args) {
       }
       as.numeric((svd_res$d[2] / svd_res$d[1]) >= 0.25)
     })
-  })
+  }))
   return(mean(val,na.rm=TRUE))
 }
 
@@ -247,14 +247,14 @@ library_size = function(args, seed=42){
   
   val = mclapply(1:B, FUN=function(i){
     id = sample(1:nrow(data), n, replace = F)
-    res = mean(sapply(unique(batch[id]), function(b){
+    res = mean(unlist(lapply(unique(batch[id]), function(b){
       ids = id[batch[id]==b]
       if(length(unique(celltype[ids]))>1){
         return(1 - tapply(ids, celltype[ids], function(idd) dcor(library_size[idd], data[idd,])$dcor))
       }else{
         return(NA)
       }
-    }),na.rm=T)
+    })),na.rm=T)
     return(res)
   },mc.cores = nthreads)
   val = unlist(val)
@@ -286,14 +286,14 @@ zero_proportion = function(args, seed=42){
   
   val = mclapply(1:B, FUN=function(i){
     id = sample(1:nrow(data), n, replace = F)
-    res = mean(sapply(unique(batch[id]), function(b){
+    res = mean(unlist(lapply(unique(batch[id]), function(b){
       ids = id[batch[id]==b]
       if(length(unique(celltype[ids]))>1){
         return(1 - tapply(ids, celltype[ids], function(idd) dcor(zp[idd], data[idd,])$dcor))
       }else{
         return(NA)
       }
-    }),na.rm=T)
+    })),na.rm=T)
     return(res)
   },mc.cores = nthreads)
   val = unlist(val)
