@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scRNA-seq Pipeline Benchmark Explorer</title>
+<style>
+:root{
+  --bg:#F4F7F8; --surface:#FFFFFF; --surface-2:#F9FBFC; --border:#E4EAED;
+  --ink:#0F1720; --ink-2:#38444E; --muted:#69747E; --band:#F1F5F6;
+  --hue:#0E9C8F; --indigo:#4F6BED; --amber:#DE842B;
+  --shadow:0 1px 2px rgba(16,30,40,.06),0 8px 24px rgba(16,30,40,.06); --radius:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#0E1519; --surface:#151E23; --surface-2:#101A1F; --border:#26323A;
+    --ink:#E7EDF1; --ink-2:#AEBAC2; --muted:#7E8B93; --band:#121B20;
+    --hue:#26B7A8; --indigo:#7C93F5; --amber:#EDA25A;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); }
+}
+:root[data-theme="light"]{ --bg:#F4F7F8; --surface:#FFFFFF; --surface-2:#F9FBFC; --border:#E4EAED;
+  --ink:#0F1720; --ink-2:#38444E; --muted:#69747E; --band:#F1F5F6; --hue:#0E9C8F; --indigo:#4F6BED; --amber:#DE842B;
+  --shadow:0 1px 2px rgba(16,30,40,.06),0 8px 24px rgba(16,30,40,.06); }
+:root[data-theme="dark"]{ --bg:#0E1519; --surface:#151E23; --surface-2:#101A1F; --border:#26323A;
+  --ink:#E7EDF1; --ink-2:#AEBAC2; --muted:#7E8B93; --band:#121B20; --hue:#26B7A8; --indigo:#7C93F5; --amber:#EDA25A;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); }
+*{box-sizing:border-box}
+html{height:100%}
+body{margin:0;height:100vh;display:grid;grid-template-rows:auto 1fr;overflow:hidden;
+  background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.45}
+h1,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--hue);outline-offset:2px;border-radius:6px}
+
+.appbar{display:flex;gap:16px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);z-index:5}
+.brand{margin-right:auto}
+.brand h1{font-size:16px}
+.brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:550;cursor:pointer;display:inline-flex;gap:7px;align-items:center}
+.btn:hover{border-color:var(--hue);color:var(--ink)}
+.btn svg{width:15px;height:15px}
+
+.layout{min-height:0;display:grid;grid-template-columns:308px 1fr}
+.rail{min-height:0;overflow:auto;padding:16px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:13px}
+.content{min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}
+.content>*{flex:0 0 auto}
+.selfull{width:100%;border:1px solid var(--border);background:var(--surface-2);border-radius:9px;padding:9px 11px;font-size:13px;cursor:pointer}
+@media (max-width:960px){
+  body{height:auto;display:block;overflow:auto}
+  .layout{display:block}
+  .rail{border-right:0;border-bottom:1px solid var(--border)}
+  .rail,.content{overflow:visible;min-height:auto}
+}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card>.hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px 8px}
+.card>.hd h3{font-size:13px}
+.card>.bd{padding:2px 14px 13px}
+.hint{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+.instr{color:var(--indigo);font-weight:700}
+.link{background:none;border:0;color:var(--hue);font-size:11.5px;font-weight:600;cursor:pointer;padding:0}
+.link:hover{text-decoration:underline}
+.subh{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:6px 0 2px}
+
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;color:var(--ink-2);padding:6px 4px;border-radius:6px;font-size:12px;font-weight:550;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--hue);box-shadow:var(--shadow)}
+
+#blendRow{margin:11px 0 2px}
+#blendRow .blendrow-head{display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+#blendRow .blendrow-body{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center}
+#blendRow input[type=range]{accent-color:var(--hue);height:3px;margin:0}
+#blendRow .blendnum{width:48px;text-align:center;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);border-radius:7px;padding:4px 6px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.dsrow{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--border);font-size:12.5px}
+.dsrow:first-child{border-top:0}
+.dsrow input{accent-color:var(--hue);width:15px;height:15px;cursor:pointer}
+.dsrow .tag{font-weight:550}
+
+.mcat{padding-top:4px}
+.mcat + .mcat{margin-top:8px;border-top:1px solid var(--border);padding-top:10px}
+.mcat-name{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.mcat-d{font-size:11px;color:var(--muted);margin:3px 0 5px;line-height:1.4}
+.mrow{display:grid;grid-template-columns:16px 1fr auto;column-gap:9px;row-gap:5px;align-items:center;padding:7px 0}
+.mrow.off{opacity:.42}
+.mrow input[type=checkbox]{grid-column:1;grid-row:1;accent-color:var(--hue);width:15px;height:15px;cursor:pointer}
+.mrow label.name{grid-column:2;grid-row:1;font-size:12.5px;font-weight:550;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .wtnum{grid-column:3;grid-row:1;width:54px;text-align:right;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);border-radius:7px;padding:4px 6px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.mrow input[type=range]{grid-column:2;grid-row:2;width:100%;margin:0;accent-color:var(--hue);height:3px}
+.mrow .prop{grid-column:3;grid-row:2;text-align:right;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+#wsum{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.mdrop{position:relative}
+.mdrop-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface-2);border-radius:9px;padding:7px 10px;font-size:12.5px;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.mdrop-btn .cnt{color:var(--muted);font-size:11px}
+.mdrop-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:30;min-width:190px;max-height:280px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:6px;display:none}
+.mdrop.open .mdrop-panel{display:block}
+.mdrop-panel label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.mdrop-panel label:hover{background:var(--surface-2)}
+.mdrop-panel input{accent-color:var(--hue)}
+.mdrop-head{display:flex;justify-content:space-between;gap:8px;padding:2px 8px 6px;margin-bottom:4px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.mdrop-head button{background:none;border:0;color:var(--hue);font-size:11px;font-weight:600;cursor:pointer;padding:0;text-transform:none;letter-spacing:0}
+
+.radios{display:flex;flex-direction:column}
+.radio{display:flex;gap:9px;align-items:baseline;padding:6px 0;cursor:pointer;font-size:12.5px}
+.radio input{accent-color:var(--hue)}
+.radio .sub{color:var(--muted);font-size:11px}
+
+.banner{display:none;align-items:center;gap:8px;font-size:12.5px;background:color-mix(in srgb,var(--amber) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--amber) 40%,var(--border));padding:9px 13px;border-radius:10px}
+.banner.show{display:flex}
+.banner b{color:var(--amber)}
+
+.summary{display:grid;grid-template-columns:1.7fr 1fr 1fr 1.3fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+@media (max-width:720px){.summary{grid-template-columns:1fr 1fr}}
+.cell{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.cell .k{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cell .v{font-size:14px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.rankpill{display:flex;align-items:flex-start;gap:8px}
+.rankdot{width:22px;height:22px;border-radius:50%;background:var(--hue);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;margin-top:1px}
+.rankpill .pn{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:11px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 8px;color:var(--ink-2)}
+.lead{color:var(--hue);font-weight:650}
+.sub{color:var(--muted);font-weight:450}
+.sep{color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;padding:11px 14px;font-size:11.5px;color:var(--muted)}
+.legend .grp{display:flex;align-items:center;gap:8px}
+.legend .dots{display:flex;align-items:center;gap:5px}
+.legend .swatch{display:inline-block;height:11px;border-radius:3px;width:110px}
+.legend b{color:var(--ink-2);font-weight:600}
+.legend .dot{display:inline-block;border-radius:50%}
+
+.tablecard{display:flex;flex-direction:column;min-height:0}
+.tabletools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 13px;border-bottom:1px solid var(--border)}
+.search{flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:7px 10px}
+.search svg{width:14px;height:14px;color:var(--muted);flex:none}
+.search input{border:0;background:transparent;outline:0;width:100%;font-size:13px}
+.pageinfo{font-size:12px;color:var(--muted);white-space:nowrap}
+.pager{display:flex;gap:4px;align-items:center}
+.pager button{border:1px solid var(--border);background:var(--surface);border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--ink-2)}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager .cur{font-size:12px;color:var(--ink-2);padding:0 4px;white-space:nowrap}
+select.perpage{border:1px solid var(--border);background:var(--surface-2);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer}
+
+.tablewrap{overflow-x:auto;border-radius:0 0 var(--radius) var(--radius)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+thead th{position:sticky;top:0;z-index:2;background:var(--surface)}
+.gh th{padding:8px 6px 6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:650;text-align:center;border-left:1px solid var(--border);border-bottom:1px solid var(--border)}
+.gh th:first-child{border-left:0;text-align:left;padding-left:14px}
+.colh th{padding:6px 5px 8px;font-weight:600;color:var(--ink-2);text-align:center;border-bottom:1px solid var(--border);vertical-align:bottom;white-space:nowrap}
+.colh th.lft{text-align:left;padding-left:14px}
+.colh th.metric{height:78px;padding:0 0 6px 0;vertical-align:bottom;overflow:visible}
+.colh th.metric>span{display:inline-block;white-space:nowrap;font-size:11.5px;line-height:1;
+  transform-origin:left bottom;transform:translateX(13px) rotate(-45deg)}
+.methodh .mh{margin-bottom:5px}
+.hlseg{display:inline-flex;gap:3px}
+.hlseg button{border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;cursor:pointer}
+.hlseg button[aria-pressed="true"]{background:var(--hue);color:#fff;border-color:var(--hue)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:nth-child(even) td{background:var(--band)}
+tbody td{padding:5px 5px;text-align:center;vertical-align:middle}
+tbody td.rank{width:40px;color:var(--muted);font-weight:600;padding-left:14px}
+tbody td.name{text-align:left;min-width:184px;font-weight:550;white-space:normal;line-height:1.25}
+.dotcell{width:46px;padding-left:2px;padding-right:2px}
+.dot{display:inline-block;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--surface) 70%,transparent)}
+.res{width:96px}
+td.score{min-width:112px;padding-right:8px}
+.bar{display:flex;align-items:center;gap:8px}
+.bar .track{display:block;flex:1;height:16px;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;overflow:hidden;min-width:34px}
+.bar .fill{display:block;height:100%;border-radius:4px 5px 5px 4px}
+.bar .num{font-size:11px;color:var(--ink-2);min-width:44px;text-align:right}
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:13px}
+
+#tip{position:fixed;z-index:100;pointer-events:none;opacity:0;transform:translateY(3px);transition:opacity .1s;background:var(--ink);color:var(--surface);padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.28);max-width:260px}
+#tip.show{opacity:1;transform:none}
+#tip .tk{color:color-mix(in srgb,var(--surface) 62%,var(--ink));font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="brand">
+    <h1>Visualization Pipeline Benchmark Explorer</h1>
+    <p>Choose data, weight the metrics, and rank the pipelines interactively.</p>
+  </div>
+  <button class="btn" id="csvBtn" title="Download the current ranking">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17V5m0 12-4-4m4 4 4-4M4 19h16"/></svg>Export CSV</button>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <section class="card">
+      <div class="hd"><h3>Data</h3></div>
+      <div class="bd">
+        <div class="seg" id="dtype" role="group" aria-label="Data type"></div>
+        <div id="blendRow" style="display:none">
+          <div class="blendrow-head"><span class="l">Real weight</span><span class="r">Semi-synthetic weight</span></div>
+          <div class="blendrow-body">
+            <input class="blendnum" data-side="left" inputmode="decimal" value="0.5" aria-label="Real weight">
+            <input type="range" id="blend" min="0" max="1" step="0.01" value="0.5" aria-label="Real to semi-synthetic blend">
+            <input class="blendnum" data-side="right" inputmode="decimal" value="0.5" aria-label="Semi-synthetic weight">
+          </div>
+        </div>
+        <div class="subh">Datasets <button class="link" id="dsAll">All</button></div>
+        <div id="datasetList"></div>
+        <p class="hint">Metric values are averaged across the ticked datasets. “Combined” blends real and semi-synthetic by the weights above.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd"><h3>Metrics &amp; weights</h3>
+        <div style="display:flex;gap:10px"><button class="link" id="allBtn">All</button><button class="link" id="eqBtn">Reset weights</button></div>
+      </div>
+      <div class="bd">
+        <p class="hint"><span class="instr">Instruction:</span> Tick to include; set each weight by dragging or typing (fractions like 1/3 are OK). The % is the normalized proportion.</p>
+        <div class="seg" id="wmode" style="margin:9px 0 8px">
+          <button data-wm="proportion" aria-pressed="true">Proportion <br> (%)</button>
+          <button data-wm="points">Importance <br> (0–100)</button>
+        </div>
+        <div id="metricList"></div>
+        <div id="wsum"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd"><h3>Scaling</h3></div>
+      <div class="bd"><div class="radios" id="scaling">
+        <label class="radio"><input type="radio" name="sc" value="minmax" checked><span>Min–max <span class="sub">→ 0–1 per metric</span></span></label>
+        <label class="radio"><input type="radio" name="sc" value="zscore"><span>Z-score <span class="sub">→ standardize</span></span></label>
+        <label class="radio"><input type="radio" name="sc" value="none"><span>None <span class="sub">→ raw metric values</span></span></label>
+      </div></div>
+    </section>
+
+    <section class="card">
+      <div class="hd"><h3>Overall score aggregation</h3></div>
+      <div class="bd">
+        <select class="selfull" id="agg">
+          <option value="mean">Weighted mean</option>
+          <option value="geom">Weighted geometric mean</option>
+        </select>
+        <p class="hint" id="aggHint"></p></div>
+    </section>
+  </aside>
+
+  <main class="content">
+    <div class="banner" id="banner"><span>Showing <b>demo data</b> (randomly generated). Put <b>pipeline_data.json</b> next to this page to show your benchmark.</span></div>
+    <section class="summary" id="summary"></section>
+    <div class="card"><div class="legend" id="legend"></div></div>
+
+    <div class="card tablecard">
+      <div class="tabletools">
+        <div id="methodFilters" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="filter" type="search" placeholder="Search the ranking…" autocomplete="off"></label>
+        <div class="pageinfo" id="pageinfo"></div>
+        <select class="perpage" id="perPage" aria-label="Rows per page">
+          <option value="25">25 / page</option><option value="50">50 / page</option>
+          <option value="100">100 / page</option><option value="all">Show all</option>
+        </select>
+        <div class="pager" id="pager"></div>
+      </div>
+      <div class="tablewrap"><div id="grid"></div></div>
+    </div>
+  </main>
+</div>
+<div id="tip"></div>
+
+<script>
+"use strict";
+
+/* ---------- default config (demo + fallback) ---------- */
+const CONFIG={
+  metrics:[
+    {key:"celltype_separation",label:"CT separation",category:"Cell type separation & position",weight:100},
+    {key:"distance_preservation",label:"Dist. preserv.",category:"Cell type separation & position",weight:100},
+    {key:"batch_mixture",label:"Batch mixing",category:"Batch effect removal",weight:100},
+    {key:"variance_preservation",label:"Var. preserv.",category:"Cell type variances",weight:50},
+    {key:"variance_samplesize",label:"Var. vs N",category:"Cell type variances",weight:50},
+    {key:"library_size",label:"Library size",category:"Visualization artifacts",weight:50},
+    {key:"zero_proportion",label:"Zero prop.",category:"Visualization artifacts",weight:50},
+    {key:"celltype_shape",label:"CT shape",category:"Visualization artifacts",weight:100}
+  ],
+  categories:[
+    {name:"Cell type separation & position",description:"Whether cell types are well separated and their relative positions are preserved."},
+    {name:"Batch effect removal",description:"How well batches are mixed after integration - batch effects removed."},
+    {name:"Cell type variances",description:"Whether the relative order of per-cell-type variance is preserved as the size of the visualized clusters, and how it scales with sample size."},
+    {name:"Visualization artifacts",description:"Whether the cell layout is driven by technical artifacts - library size, dropout (zeros), or distorted cell-type shape."}
+  ],
+  units:{total_runtime_s:"s",peak_memory:"GB"}
+};
+
+function makeDemoData(){
+  const norms=["log1pPF","SCTransform","scran"],integs=["Harmony","SeuratCCA","fastMNN","scVI","none"],viss=["UMAP","tSNE"];
+  const dsNames=["mouse_pancreas","human_pbmc","mouse_brain"],dtypes=["real","sim"];
+  const pipelines=[];
+  for(const n of norms)for(const it of integs)for(const v of viss){
+    const values={};
+    for(const t of dtypes){values[t]={};for(const ds of dsNames){const o={};CONFIG.metrics.forEach(m=>o[m.key]=+Math.random().toFixed(4));
+      o.total_runtime_s=Math.round(5+Math.random()*500);o.peak_memory=+(1+Math.random()*31).toFixed(1);values[t][ds]=o;}}
+    pipelines.push({normalization:n,integration:it,visualization:v,values});
+  }
+  return {datasets:dsNames.slice(),dtypes,units:CONFIG.units,categories:CONFIG.categories,metrics:CONFIG.metrics,pipelines};
+}
+
+/* ---------- ramps ---------- */
+const RAMPS={
+  teal:["#EAF6F4","#BFE6E0","#8ED3CA","#57BAB0","#2C9C93","#137C76","#0B5A56"],
+  indigo:["#EAEEFC","#C6D2F6","#9EB1ED","#7389E3","#4F6BED","#3B50C4","#2A3A93"],
+  amber:["#FBF1E2","#F5D9B3","#EEBE83","#E7A056","#DE842B","#BF691A","#8C4C13"]
+};
+function hex2rgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function ramp(name,t){const s=RAMPS[name];t=Math.max(0,Math.min(1,t||0));const x=t*(s.length-1),i=Math.floor(x),f=x-i;
+  if(i>=s.length-1)return s[s.length-1];const a=hex2rgb(s[i]),b=hex2rgb(s[i+1]);
+  return `rgb(${Math.round(a[0]+(b[0]-a[0])*f)},${Math.round(a[1]+(b[1]-a[1])*f)},${Math.round(a[2]+(b[2]-a[2])*f)})`;}
+
+/* ---------- state ---------- */
+let DATA=makeDemoData(), METRICS=[], CATS=[], DTYPES=[];
+let state={dtype:"combined",blend:0.5,datasets:new Set(),methods:{},selected:new Set(),weights:{},scaling:"minmax",
+  aggregation:"mean",weightMode:"proportion",highlight:"normalization",page:1,perPage:25,filter:""};
+function parseBlend(s){s=String(s).trim();if(!s)return NaN;if(s.includes("/")){const p=s.split("/");return parseFloat(p[0])/parseFloat(p[1]);}return parseFloat(s);}
+function syncBlend(){const r=document.getElementById("blendRow");if(!r)return;const bl=state.blend;
+  r.querySelector("#blend").value=bl;
+  r.querySelector('.blendnum[data-side="left"]').value=String(+(1-bl).toFixed(2));
+  r.querySelector('.blendnum[data-side="right"]').value=String(+bl.toFixed(2));}
+function updateBlendVisibility(){const r=document.getElementById("blendRow");if(r)r.style.display=(state.dtype==="combined"&&DTYPES.length===2)?"":"none";}
+const STEPS=["normalization","integration","visualization"];
+// accepts "70", "0.2", "1/3"; fraction or value <1 is read as a proportion (×100)
+function parseWeightPct(s){s=String(s).trim();if(!s)return NaN;let v;
+  if(s.includes("/")){const p=s.split("/");v=parseFloat(p[0])/parseFloat(p[1]);}else v=parseFloat(s);
+  if(!Number.isFinite(v))return NaN;if(s.includes("/")||v<1)v*=100;return Math.max(0,v);}
+function defaultWeights(mode){mode=mode||state.weightMode;
+  if(mode==="points")return Object.fromEntries(METRICS.map(m=>[m.key,m.weight]));   // raw 0-100 (e.g. 100/50)
+  const tot=METRICS.reduce((a,m)=>a+m.weight,0)||1;
+  return Object.fromEntries(METRICS.map(m=>[m.key,+(m.weight/tot*100).toFixed(4)]));} // proportions summing to 100
+function convertWeights(to){const vals=METRICS.map(m=>state.weights[m.key]||0);      // keep ratios when switching mode
+  if(to==="proportion"){const tot=vals.reduce((a,b)=>a+b,0)||1;METRICS.forEach(m=>state.weights[m.key]=+((state.weights[m.key]||0)/tot*100).toFixed(4));}
+  else{const mx=Math.max(...vals,1e-9);METRICS.forEach(m=>state.weights[m.key]=+((state.weights[m.key]||0)/mx*100).toFixed(4));}}
+function syncWeightInputs(){document.querySelectorAll("#metricList .mrow").forEach(row=>{const k=row.dataset.k,w=state.weights[k]||0;
+  const r=row.querySelector("input[type=range]"),n=row.querySelector(".wtnum");if(r)r.value=Math.min(100,w);if(n)n.value=w.toFixed(1);});}
+const AGG_HINT={mean:"Weighted average of the scaled metrics.",
+  geom:"Weighted geometric mean of the 0-1 metric values - one weak metric pulls the whole score down (penalizes imbalance)."};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmt=(x,d=2)=>Number.isFinite(x)?x.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plName=p=>`${p.normalization} · ${p.integration} · ${p.visualization}`;
+const dtLabel=t=>({real:"Real",sim:"Semi-synthetic",semisynthetic:"Semi-synthetic",combined:"Combined"}[t]||t);
+
+function typeVal(p,ds,field){
+  if(state.dtype==="combined"){
+    if(DTYPES.length===2){const a=p.values[DTYPES[0]]&&p.values[DTYPES[0]][ds]&&p.values[DTYPES[0]][ds][field],
+        b=p.values[DTYPES[1]]&&p.values[DTYPES[1]][ds]&&p.values[DTYPES[1]][ds][field];
+      if(!Number.isFinite(a)&&!Number.isFinite(b))return NaN;if(!Number.isFinite(a))return b;if(!Number.isFinite(b))return a;
+      return (1-state.blend)*a + state.blend*b;}                       // left=real weight, right=semi-synthetic weight
+    let s=0,n=0;for(const t of DTYPES){const v=p.values[t]&&p.values[t][ds]&&p.values[t][ds][field];if(Number.isFinite(v)){s+=v;n++;}}return n?s/n:NaN;}
+  const o=p.values[state.dtype];return o&&o[ds]?o[ds][field]:NaN;
+}
+function dsVal(p,field){let s=0,n=0;for(const ds of state.datasets){const v=typeVal(p,ds,field);if(Number.isFinite(v)){s+=v;n++;}}return n?s/n:NaN;}
+function minmax(v){const c=v.filter(Number.isFinite);const lo=Math.min(...c),hi=Math.max(...c),d=hi-lo;return v.map(x=>Number.isFinite(x)?(d?(x-lo)/d:0.5):0);}
+function scaleColumn(v){const m=state.scaling;
+  if(m==="none")return v.slice();
+  if(m==="minmax")return minmax(v);
+  if(m==="zscore"){const c=v.filter(Number.isFinite);const mean=c.reduce((a,b)=>a+b,0)/c.length,sd=Math.sqrt(c.reduce((a,b)=>a+(b-mean)**2,0)/c.length)||1;return v.map(x=>Number.isFinite(x)?(x-mean)/sd:0);}
+  return v.slice();}
+function methodPool(){return DATA.pipelines.filter(p=>STEPS.every(s=>state.methods[s].has(p[s])));}
+
+/* ---------- compute ---------- */
+function compute(){
+  const sel=METRICS.filter(m=>state.selected.has(m.key));
+  const pool=methodPool();                        // only pipelines whose methods are ticked
+  const disp={},scal={};
+  METRICS.forEach(m=>{const col=pool.map(p=>dsVal(p,m.key));disp[m.key]=minmax(col);scal[m.key]=scaleColumn(col);});
+  const wSum=sel.reduce((a,m)=>a+(state.weights[m.key]||0),0);
+  const scores=pool.map((p,i)=>{if(!sel.length||wSum<=0)return 0;
+    if(state.aggregation==="geom"){let acc=0;for(const m of sel)acc+=(state.weights[m.key]||0)*Math.log(Math.max(1e-6,disp[m.key][i]));return Math.exp(acc/wSum);}
+    let acc=0;for(const m of sel)acc+=(state.weights[m.key]||0)*scal[m.key][i];return acc/wSum;});
+  const sNorm=minmax(scores);
+  const rt=minmax(pool.map(p=>dsVal(p,"total_runtime_s")));
+  const mem=minmax(pool.map(p=>dsVal(p,"peak_memory")));
+  const rows=pool.map((p,i)=>({p,i,score:scores[i],sNorm:sNorm[i],
+    disp:Object.fromEntries(METRICS.map(m=>[m.key,disp[m.key][i]])),rt:rt[i],mem:mem[i]}));
+  rows.sort((a,b)=>b.score-a.score||a.i-b.i);
+  rows.forEach((r,i)=>r.rank=i+1);
+  return {rows,sel};
+}
+
+/* ---------- render ---------- */
+function methodParts(p){
+  return [["normalization",p.normalization],["integration",p.integration],["visualization",p.visualization]]
+    .map(([k,v])=>`<span class="${k===state.highlight?"lead":"sub"}">${esc(v)}</span>`).join('<span class="sep"> · </span>');
+}
+function render(){
+  updateWeightUI();
+  const runU=DATA.units.total_runtime_s||"s", memU=DATA.units.peak_memory||"GB";
+  if(state.datasets.size===0){$("#summary").innerHTML="";$("#legend").innerHTML="";
+    $("#grid").innerHTML='<div class="empty">Select at least one dataset.</div>';$("#pageinfo").textContent="";$("#pager").innerHTML="";return;}
+  const {rows,sel}=compute();
+  const top=rows[0], dsList=[...state.datasets];
+  $("#summary").innerHTML=top?`
+    <div class="cell"><span class="k">Top pipeline</span><span class="v rankpill"><span class="rankdot">1</span><span class="pn" title="${esc(plName(top.p))}">${methodParts(top.p)}</span></span></div>
+    <div class="cell"><span class="k">Score</span><span class="v mono">${fmt(top.score,3)}</span></div>
+    <div class="cell"><span class="k">Total number of pipelines</span><span class="v mono">${rows.length}</span></div>
+    <div class="cell"><span class="k">Setup</span><div class="chips">
+      <span class="chip">${dtLabel(state.dtype)}${state.dtype==="combined"&&DTYPES.length===2?` ${+(1-state.blend).toFixed(2)}/${+state.blend.toFixed(2)}`:""}</span>
+      <span class="chip">${dsList.length}/${DATA.datasets.length} datasets</span>
+      <span class="chip">${({none:"Raw",minmax:"Min–max",zscore:"Z-score"})[state.scaling]}</span>
+      <span class="chip">${state.aggregation==="geom"?"Geo. mean":"Weighted mean"}</span></div></div>`:"";
+
+  $("#legend").innerHTML=`
+    <div class="grp"><b>Metric</b><div class="dots">${[.15,.4,.65,.9,1].map(t=>`<span class="dot" style="width:${6+t*16}px;height:${6+t*16}px;background:${ramp("teal",t)}"></span>`).join("")}<span style="margin-left:4px">bad → good</span></div></div>
+    <div class="grp"><b>Score</b><span class="swatch" style="background:linear-gradient(90deg,${ramp("indigo",0)},${ramp("indigo",1)})"></span><span>bad → good</span></div>
+    <div class="grp"><b>Runtime / memory</b><span class="swatch" style="background:linear-gradient(90deg,${ramp("amber",0)},${ramp("amber",1)})"></span><span>low → high cost</span></div>`;
+
+  if(!sel.length){$("#grid").innerHTML='<div class="empty">Select at least one metric to rank the pipelines.</div>';$("#pageinfo").textContent="";$("#pager").innerHTML="";return;}
+  if(!rows.length){$("#grid").innerHTML='<div class="empty">No pipelines match the selected methods.</div>';$("#pageinfo").textContent="";$("#pager").innerHTML="";return;}
+
+  const f=state.filter.trim().toLowerCase();
+  const shown=f?rows.filter(r=>plName(r.p).toLowerCase().includes(f)):rows;
+  const total=shown.length, per=state.perPage==="all"?Math.max(total,1):state.perPage;
+  const pages=Math.max(1,Math.ceil(total/per));
+  if(state.page>pages)state.page=pages; if(state.page<1)state.page=1;
+  const start=(state.page-1)*per, end=Math.min(start+per,total);
+  const pageRows=shown.slice(start,end);
+  $("#pageinfo").textContent=`Showing ${total?start+1:0}–${end} of ${total}`+(f?` (filtered from ${rows.length})`:"");
+  $("#pager").innerHTML=`
+    <button data-page="1" ${state.page<=1?"disabled":""}>«</button>
+    <button data-page="${state.page-1}" ${state.page<=1?"disabled":""}>‹</button>
+    <span class="cur">Page ${state.page} / ${pages}</span>
+    <button data-page="${state.page+1}" ${state.page>=pages?"disabled":""}>›</button>
+    <button data-page="${pages}" ${state.page>=pages?"disabled":""}>»</button>`;
+
+  let catGroups="",crun=null;  // group consecutive columns by category so headers can't misalign
+  sel.forEach(m=>{if(crun&&crun.name===m.category)crun.n++;else{if(crun)catGroups+=`<th colspan="${crun.n}">${esc(crun.name)}</th>`;crun={name:m.category,n:1};}});
+  if(crun)catGroups+=`<th colspan="${crun.n}">${esc(crun.name)}</th>`;
+  const gh=`<tr class="gh"><th colspan="2">Pipeline</th><th>Overall</th>${catGroups}<th colspan="2">Resources</th></tr>`;
+  const hl=(k,l)=>`<button data-hl="${k}" aria-pressed="${state.highlight===k}">${l}</button>`;
+  const colh=`<tr class="colh"><th>#</th>
+    <th class="lft methodh"><div class="mh">Method</div><span class="hlseg">${hl("normalization","Norm")}${hl("integration","Integ")}${hl("visualization","Vis")}</span></th>
+    <th>Score</th>${sel.map(m=>`<th class="metric"><span>${esc(m.label)}</span></th>`).join("")}
+    <th>Runtime (${esc(runU)})</th><th>Memory (${esc(memU)})</th></tr>`;
+  const bar=(t,val,rmp)=>`<div class="bar"><span class="track"><span class="fill" style="width:${Math.max(3,(t||0)*100).toFixed(1)}%;background:${ramp(rmp,t)}"></span></span><span class="num mono">${val}</span></div>`;
+  const body=pageRows.map(r=>{
+    const dots=sel.map(m=>{const t=r.disp[m.key],sz=(6+t*17).toFixed(1);
+      return `<td class="dotcell"><span class="dot" data-tip="${esc(m.label)}|${esc(plName(r.p))}|value ${fmt(dsVal(r.p,m.key),3)}" style="width:${sz}px;height:${sz}px;background:${ramp("teal",t)}"></span></td>`;}).join("");
+    const rtRaw=dsVal(r.p,"total_runtime_s"), memRaw=dsVal(r.p,"peak_memory");
+    return `<tr>
+      <td class="rank mono">${r.rank}</td>
+      <td class="name">${methodParts(r.p)}</td>
+      <td class="score"><div data-tip="Overall score|${esc(plName(r.p))}|score ${fmt(r.score,3)}|rank ${r.rank} of ${rows.length}">${bar(r.sNorm,fmt(r.score,3),"indigo")}</div></td>
+      ${dots}
+      <td class="res"><div data-tip="Runtime|${esc(plName(r.p))}|${fmt(rtRaw,1)} ${esc(runU)}">${bar(r.rt,fmt(rtRaw,0)+" "+runU,"amber")}</div></td>
+      <td class="res"><div data-tip="Peak memory|${esc(plName(r.p))}|${fmt(memRaw,1)} ${esc(memU)}">${bar(r.mem,fmt(memRaw,1)+" "+memU,"amber")}</div></td>
+    </tr>`;}).join("");
+  $("#grid").innerHTML=`<table><thead>${gh}${colh}</thead><tbody>${body}</tbody></table>`;
+}
+
+/* ---------- build controls ---------- */
+function buildAll(){
+  METRICS=DATA.metrics.map(m=>({key:m.key,label:m.label||m.key,category:m.category||"Metrics",weight:Number.isFinite(m.weight)?m.weight:50}));
+  CATS=DATA.categories&&DATA.categories.length?DATA.categories:[...new Set(METRICS.map(m=>m.category))].map(n=>({name:n,description:""}));
+  // Fix display order regardless of how the JSON is ordered: categories in the
+  // canonical order below, metrics grouped by category (so headers never fragment).
+  const cOrder=CONFIG.categories.map(c=>c.name), mOrder=CONFIG.metrics.map(m=>m.key);
+  const oidx=(arr,v)=>{const i=arr.indexOf(v);return i<0?1e9:i;};
+  CATS=CATS.slice().sort((a,b)=>oidx(cOrder,a.name)-oidx(cOrder,b.name))
+    .map(c=>{const cc=CONFIG.categories.find(x=>x.name===c.name);return cc?{name:c.name,description:cc.description}:c;}); // descriptions from HTML
+  const cIdx=Object.fromEntries(CATS.map((c,i)=>[c.name,i]));
+  METRICS.sort((a,b)=>(cIdx[a.category]??1e9)-(cIdx[b.category]??1e9)||oidx(mOrder,a.key)-oidx(mOrder,b.key));
+  DTYPES=DATA.dtypes&&DATA.dtypes.length?DATA.dtypes:["real"];
+  state.dtype=DTYPES.length>1?"combined":DTYPES[0];
+  state.datasets=new Set(DATA.datasets);
+  state.selected=new Set(METRICS.map(m=>m.key));
+  state.weightMode="proportion";
+  state.weights=defaultWeights("proportion");
+  document.querySelectorAll("#wmode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.wm===state.weightMode));
+  STEPS.forEach(s=>state.methods[s]=new Set(DATA.pipelines.map(p=>p[s])));
+  state.page=1;
+  // data-type segmented
+  const opts=DTYPES.slice(); if(DTYPES.length>1)opts.push("combined");
+  $("#dtype").innerHTML=opts.map(t=>`<button data-dt="${esc(t)}" aria-pressed="${state.dtype===t}">${dtLabel(t)}</button>`).join("");
+  state.blend=0.5;
+  if(DTYPES.length===2){const br=document.getElementById("blendRow");
+    br.querySelector(".blendrow-head .l").textContent=dtLabel(DTYPES[0])+" weight";
+    br.querySelector(".blendrow-head .r").textContent=dtLabel(DTYPES[1])+" weight";}
+  syncBlend();updateBlendVisibility();
+  // datasets ("All" toggle only makes sense with >1 dataset)
+  $("#dsAll").style.display=DATA.datasets.length>1?"":"none";
+  $("#datasetList").innerHTML=DATA.datasets.map(d=>`<label class="dsrow"><input type="checkbox" data-ds="${esc(d)}" checked><span class="tag">${esc(d)}</span></label>`).join("");
+  // metrics grouped by category
+  const groups={};METRICS.forEach(m=>{(groups[m.category]=groups[m.category]||[]).push(m);});
+  $("#metricList").innerHTML=CATS.map(c=>{const ms=groups[c.name]||[];if(!ms.length)return"";
+    return `<div class="mcat"><div class="mcat-name">${esc(c.name)}</div>${c.description?`<p class="mcat-d">${esc(c.description)}</p>`:""}
+      ${ms.map(m=>`<div class="mrow" data-k="${esc(m.key)}"><input type="checkbox" data-k="${esc(m.key)}" checked aria-label="Include ${esc(m.label)}"><label class="name">${esc(m.label)}</label><input class="wtnum" type="text" inputmode="decimal" data-k="${esc(m.key)}" value="${(state.weights[m.key]||0).toFixed(1)}" aria-label="${esc(m.label)} weight"><input type="range" min="0" max="100" step="0.1" value="${state.weights[m.key]||0}" data-k="${esc(m.key)}" aria-label="${esc(m.label)} weight slider"><span class="prop mono"></span></div>`).join("")}</div>`;
+  }).join("");
+  // per-step method filters (dropdown checklists)
+  $("#methodFilters").innerHTML=STEPS.map(s=>{
+    const vals=[...new Set(DATA.pipelines.map(p=>p[s]))].sort();
+    const label={normalization:"Normalization",integration:"Integration",visualization:"Visualization"}[s];
+    return `<div class="mdrop" data-step="${s}"><button class="mdrop-btn" type="button">${label} <span class="cnt"></span> <span aria-hidden="true">▾</span></button>
+      <div class="mdrop-panel"><div class="mdrop-head"><span>${label}</span><span><button type="button" data-all="${s}">All</button> · <button type="button" data-none="${s}">None</button></span></div>
+      ${vals.map(v=>`<label><input type="checkbox" data-step="${s}" value="${esc(v)}" checked>${esc(v)}</label>`).join("")}</div></div>`;
+  }).join("");
+  updateMethodCounts();
+}
+function updateWeightUI(){
+  const sel=METRICS.filter(m=>state.selected.has(m.key));
+  const S=sel.reduce((a,m)=>a+(state.weights[m.key]||0),0)||1;
+  document.querySelectorAll("#metricList .mrow").forEach(row=>{const k=row.dataset.k;const pr=row.querySelector(".prop");
+    if(pr)pr.textContent=state.selected.has(k)?((state.weights[k]||0)/S*100).toFixed(1)+"%":"—";});
+  const w=document.getElementById("wsum");if(!w)return;
+  if(state.weightMode==="points"){w.textContent="Each weight is an independent 0–100 importance; the % is its normalized share.";w.style.color="var(--muted)";return;}
+  const sum=sel.reduce((a,m)=>a+(state.weights[m.key]||0),0), off=sel.length&&Math.abs(sum-100)>0.5;
+  w.textContent=off?`⚠ Weights total ${sum.toFixed(1)}% — enter values summing to 100% (they're auto-normalized to the % shown).`:"Weights sum to 100%.";
+  w.style.color=off?"#e5484d":"var(--muted)";
+}
+function updateMethodCounts(){
+  document.querySelectorAll("#methodFilters .mdrop").forEach(d=>{const s=d.dataset.step;
+    const all=new Set(DATA.pipelines.map(p=>p[s])).size,n=state.methods[s].size;
+    const c=d.querySelector(".cnt");if(c)c.textContent=n===all?"(all)":`(${n}/${all})`;});
+}
+
+function wire(){
+  $("#csvBtn").addEventListener("click",exportCSV);
+  $("#dtype").addEventListener("click",e=>{const b=e.target.closest("[data-dt]");if(!b)return;
+    state.dtype=b.dataset.dt;$$("#dtype button").forEach(x=>x.setAttribute("aria-pressed",x===b));updateBlendVisibility();render();});
+  $("#blend").addEventListener("input",e=>{state.blend=+e.target.value;syncBlend();render();});
+  $("#blendRow").addEventListener("change",e=>{const i=e.target.closest(".blendnum");if(!i)return;
+    let v=parseBlend(i.value);if(!Number.isFinite(v))v=i.dataset.side==="left"?(1-state.blend):state.blend;
+    v=Math.max(0,Math.min(1,v));state.blend=i.dataset.side==="left"?(1-v):v;syncBlend();render();});
+  $("#dsAll").addEventListener("click",()=>{const all=state.datasets.size<DATA.datasets.length;
+    $$("#datasetList input").forEach(cb=>cb.checked=all);state.datasets=new Set(all?DATA.datasets.slice():[]);state.page=1;render();});
+  $("#datasetList").addEventListener("change",e=>{const cb=e.target.closest("input");if(!cb)return;
+    cb.checked?state.datasets.add(cb.dataset.ds):state.datasets.delete(cb.dataset.ds);state.page=1;render();});
+  $("#allBtn").addEventListener("click",()=>{const all=state.selected.size<METRICS.length;
+    $$("#metricList .mrow").forEach(row=>{const cb=row.querySelector("input[type=checkbox]");cb.checked=all;row.classList.toggle("off",!all);row.querySelector("input[type=range]").disabled=!all;row.querySelector(".wtnum").disabled=!all;});
+    state.selected=new Set(all?METRICS.map(m=>m.key):[]);state.page=1;render();});
+  $("#eqBtn").addEventListener("click",()=>{state.weights=defaultWeights();syncWeightInputs();render();});
+  $("#wmode").addEventListener("click",e=>{const b=e.target.closest("[data-wm]");if(!b||b.dataset.wm===state.weightMode)return;
+    convertWeights(b.dataset.wm);state.weightMode=b.dataset.wm;
+    $$("#wmode button").forEach(x=>x.setAttribute("aria-pressed",x===b));syncWeightInputs();render();});
+  $("#methodFilters").addEventListener("click",e=>{
+    const b=e.target.closest(".mdrop-btn");
+    if(b){const d=b.closest(".mdrop"),open=d.classList.contains("open");$$("#methodFilters .mdrop").forEach(x=>x.classList.remove("open"));if(!open)d.classList.add("open");return;}
+    const a=e.target.closest("[data-all]");if(a){const s=a.dataset.all;state.methods[s]=new Set(DATA.pipelines.map(p=>p[s]));a.closest(".mdrop-panel").querySelectorAll("input").forEach(i=>i.checked=true);updateMethodCounts();state.page=1;render();return;}
+    const n=e.target.closest("[data-none]");if(n){const s=n.dataset.none;state.methods[s]=new Set();n.closest(".mdrop-panel").querySelectorAll("input").forEach(i=>i.checked=false);updateMethodCounts();state.page=1;render();return;}});
+  $("#methodFilters").addEventListener("change",e=>{const i=e.target.closest("input[type=checkbox]");if(!i)return;const s=i.dataset.step;
+    i.checked?state.methods[s].add(i.value):state.methods[s].delete(i.value);updateMethodCounts();state.page=1;render();});
+  document.addEventListener("click",e=>{if(!e.target.closest("#methodFilters"))$$("#methodFilters .mdrop.open").forEach(d=>d.classList.remove("open"));});
+  $("#metricList").addEventListener("input",e=>{if(e.target.matches("input[type=range]")){const k=e.target.dataset.k;state.weights[k]=+e.target.value;
+    e.target.closest(".mrow").querySelector(".wtnum").value=(+e.target.value).toFixed(1);render();}});
+  $("#metricList").addEventListener("change",e=>{
+    if(e.target.matches(".wtnum")){const k=e.target.dataset.k,row=e.target.closest(".mrow"),v=parseWeightPct(e.target.value);
+      if(Number.isFinite(v)){state.weights[k]=v;row.querySelector("input[type=range]").value=Math.min(100,v);}
+      e.target.value=(state.weights[k]||0).toFixed(1);render();return;}
+    if(e.target.matches("input[type=checkbox]")){const k=e.target.dataset.k,row=e.target.closest(".mrow");
+      e.target.checked?state.selected.add(k):state.selected.delete(k);row.classList.toggle("off",!e.target.checked);
+      row.querySelector("input[type=range]").disabled=!e.target.checked;row.querySelector(".wtnum").disabled=!e.target.checked;state.page=1;render();}});
+  $("#scaling").addEventListener("change",e=>{state.scaling=e.target.value;render();});
+  $("#agg").value=state.aggregation; $("#aggHint").textContent=AGG_HINT[state.aggregation];
+  $("#agg").addEventListener("change",e=>{state.aggregation=e.target.value;$("#aggHint").textContent=AGG_HINT[state.aggregation];render();});
+  $("#perPage").addEventListener("change",e=>{state.perPage=e.target.value==="all"?"all":+e.target.value;state.page=1;render();});
+  $("#filter").addEventListener("input",e=>{state.filter=e.target.value;state.page=1;render();});
+  $("#pager").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(!b||b.disabled)return;state.page=+b.dataset.page;render();});
+  $("#grid").addEventListener("click",e=>{const b=e.target.closest("[data-hl]");if(!b)return;state.highlight=b.dataset.hl;render();});
+  const tip=$("#tip");
+  document.addEventListener("mouseover",e=>{const el=e.target.closest("[data-tip]");if(!el)return;
+    const p=el.dataset.tip.split("|");tip.innerHTML=`<b>${p[0]}</b><br><span class="tk">${p[1]}</span>`+p.slice(2).map(x=>`<br>${x}`).join("");tip.classList.add("show");});
+  document.addEventListener("mousemove",e=>{if(!tip.classList.contains("show"))return;const pad=14;let x=e.clientX+pad,y=e.clientY+pad;const r=tip.getBoundingClientRect();
+    if(x+r.width>innerWidth)x=e.clientX-r.width-pad;if(y+r.height>innerHeight)y=e.clientY-r.height-pad;tip.style.left=x+"px";tip.style.top=y+"px";});
+  document.addEventListener("mouseout",e=>{if(e.target.closest("[data-tip]"))tip.classList.remove("show");});
+}
+
+/* ---------- data load ---------- */
+function normalizeData(d){
+  if(!d||!Array.isArray(d.pipelines)||!d.pipelines.length)throw new Error("Expected a pipelines array.");
+  const cmap={},wmap={};CONFIG.metrics.forEach(m=>{cmap[m.key]=m.category;wmap[m.key]=m.weight;});
+  let metrics=(Array.isArray(d.metrics)&&d.metrics.length?d.metrics:CONFIG.metrics).map(m=>({key:m.key,label:m.label||m.key,
+    category:m.category||cmap[m.key]||"Metrics",weight:Number.isFinite(m.weight)?m.weight:(wmap[m.key]!=null?wmap[m.key]:50)}));
+  const pipelines=d.pipelines.map(p=>{
+    let v=p.values;if(!v){v={};if(p.real)v.real=p.real;if(p.sim)v.sim=p.sim;}
+    const nv={};for(const t of Object.keys(v)){const inner=v[t]||{};const fk=Object.keys(inner)[0];
+      nv[t]=(fk!=null&&inner[fk]&&typeof inner[fk]==="object")?inner:{all:inner};}
+    return {normalization:p.normalization,integration:p.integration,visualization:p.visualization,values:nv};});
+  let dtypes=Array.isArray(d.dtypes)&&d.dtypes.length?d.dtypes.slice():Object.keys(pipelines[0].values);
+  let datasets=Array.isArray(d.datasets)&&d.datasets.length?d.datasets.slice():
+    [...new Set(pipelines.flatMap(p=>Object.values(p.values).flatMap(t=>Object.keys(t))))];
+  let categories=Array.isArray(d.categories)&&d.categories.length?d.categories:
+    [...new Set(metrics.map(m=>m.category))].map(n=>{const c=CONFIG.categories.find(x=>x.name===n);return{name:n,description:c?c.description:""};});
+  const units=d.units||CONFIG.units;
+  return {datasets,dtypes,units,categories,metrics,pipelines};
+}
+async function boot(){
+  buildAll();wire();render();
+  try{const res=await fetch("pipeline_data.json",{cache:"no-store"});
+    if(res.ok){DATA=normalizeData(await res.json());$("#banner").classList.remove("show");buildAll();render();}
+    else{$("#banner").classList.add("show");}
+  }catch(e){$("#banner").classList.add("show");}
+}
+function exportCSV(){
+  const {rows,sel}=compute();
+  const head=["rank","normalization","integration","visualization","score",...sel.map(m=>m.key),"total_runtime_s","peak_memory"];
+  const lines=[head.join(",")];
+  rows.forEach(r=>lines.push([r.rank,r.p.normalization,r.p.integration,r.p.visualization,r.score.toFixed(6),
+    ...sel.map(m=>dsVal(r.p,m.key).toFixed(6)),dsVal(r.p,"total_runtime_s").toFixed(3),dsVal(r.p,"peak_memory").toFixed(3)].join(",")));
+  const blob=new Blob([lines.join("\n")],{type:"text/csv"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`ranking_${state.dtype}_${state.scaling}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+boot();
+</script>
+</body>
+</html>
