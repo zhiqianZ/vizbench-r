@@ -1,0 +1,8 @@
+name: r_without_required_deps
+channels:
+  - conda-forge
+  - r
+  - nodefaults
+dependencies:
+  - conda-forge::r-base=4.5.1
+  - conda-forge::r-argparse

@@ -1,0 +1,253 @@
+id: vizbench_apptainer
+version: 0.01
+benchmarker: "Zhiqian Zhai"
+benchmark_yaml_spec: 0.04
+#storage: http://omnibenchmark.org:9000
+#storage_api: S3
+#storage_bucket_name: foo
+software_backend: apptainer
+software_environments:
+  r-451-bioc-321-apptainer:
+    description: "rocker/tidyverse:4.5.1-based image w/ Bioc 3.21 (NOTE: BioC/R packages not locked down)"
+    apptainer: ~/envs/r-451-bioc-321-apptainer.sif
+    conda: ~/envs/r-451-bioc-321-dummy.yml
+
+stages:
+  ## rawdata ##########################################################
+  - id: rawdata
+    modules:
+      - id: mouse_pancreas
+        name: "dataset from https://cellxgene.cziscience.com/collections/ff69f0ee-fef6-4895-9f48-6c64a68c8289 "
+        #name: "mouse pancrease dataset from https://pubmed.ncbi.nlm.nih.gov/27667365/"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+            url: https://github.com/zhiqianZ/vizbench-r
+            commit: 51a7040
+        parameters:  
+          - values: ["--what", "rawdata", "--flavour", "mouse_pancreas"] 
+    outputs:
+      - id: rawdata.ad
+        path: "{dataset}_rawdata.ad"
+        
+ 
+  ## simulate ##########################################################
+  - id: simulate
+    modules:
+      - id: simulation
+        name: "simulator from scdesign3: https://doi.org/10.1038/s41587-023-01772-1"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+            url: https://github.com/zhiqianZ/vizbench-r
+            commit: 51a7040
+        parameters:
+          - values: ["--what", "simulate", "--flavour", "real", "--ncells", "1000000", "--ngenes", "2000", "--nthreads", "2"]
+      - id: real
+        name: "simulator from scdesign3: https://doi.org/10.1038/s41587-023-01772-1"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+            url: https://github.com/zhiqianZ/vizbench-r
+            commit: 51a7040
+        parameters:
+          - values: ["--what", "simulate", "--flavour", "real", "--ncells", "1000000", "--ngenes", "2000", "--nthreads", "2"]
+    inputs:
+      - entries:
+          - rawdata.ad
+    outputs:
+      - id: simulate.ad
+        path: "{dataset}_simulate.ad"
+      - id: simulate_mean.csv
+        path: "{dataset}_simulate_mean.csv.gz"
+      - id: simulate_var.csv
+        path: "{dataset}_simulate_var.csv.gz"
+      - id: celltype.csv
+        path: "{dataset}_simulate_celltype.csv.gz"
+      - id: batch.csv
+        path: "{dataset}_simulate_batch.csv.gz"
+
+  ## normalize ##########################################################
+  - id: normalize
+    modules:
+      - id: normalize-r
+        name: "normalization functions"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+            url: https://github.com/zhiqianZ/vizbench-r
+            commit: 51a7040
+        parameters:
+            - values: ["--what", "normalize", "--flavour", "log1pCPM"]
+            - values: ["--what", "normalize", "--flavour", "log1pCP10k"]
+            - values: ["--what", "normalize", "--flavour", "PFlog1pPF"]
+            - values: ["--what", "normalize", "--flavour", "log1pPF"]
+            - values: ["--what", "normalize", "--flavour", "log1pCPMedian"]
+            - values: ["--what", "normalize", "--flavour", "sctransform"]
+            - values: ["--what", "normalize", "--flavour", "sanity"]
+    inputs:
+      - entries:
+          - simulate.ad
+    outputs:
+      - id: normalize.ad
+        path: "{dataset}_normalize.ad"
+      - id: normalize.json
+        path: "{dataset}_normalize.json"
+
+
+  ## ========= INTEGRATION =======================================================
+  - id: integrate_normalize
+    modules:
+      - id: integrate_normalize-r
+        name: "integration methods compatible with various normalization methods"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","integrate_normalize","--flavour","harmony"]
+          - values: ["--what","integrate_normalize","--flavour","fastMNN"]
+          - values: ["--what","integrate_normalize","--flavour","SeuratCCA"]
+          - values: ["--what","integrate_normalize","--flavour","SeuratRPCA"]
+          - values: ["--what","integrate_normalize","--flavour","harmony_integrateRigor"]
+          - values: ["--what","integrate_normalize","--flavour","fastMNN_integrateRigor"]
+          - values: ["--what","integrate_normalize","--flavour","SeuratCCA_integrateRigor"]
+          - values: ["--what","integrate_normalize","--flavour","SeuratRPCA_integrateRigor"]
+    inputs:
+      - entries: [normalize.ad, normalize.json]
+    outputs:
+      - id: integrate_normalize.ad
+        path: "{dataset}_integrate_normalize.ad"
+
+  ## ========= VISUALIZATION (NORM BRANCH) ======================================
+  - id: visualize_normalize
+    modules:
+      - id: visualize_normalize-r
+        name: "2D visualization methods implemented in R"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","visualize_normalize","--flavour","SeuratUMAP"]
+          - values: ["--what","visualize_normalize","--flavour","BHtSNE"]
+          - values: ["--what","visualize_normalize","--flavour","FItSNE"]
+          - values: ["--what","visualize_normalize","--flavour","scanpyUMAP"]
+          - values: ["--what","visualize_normalize","--flavour","densMAP"]
+          - values: ["--what","visualize_normalize","--flavour","graphFA"]
+          - values: ["--what","visualize_normalize","--flavour","SeuratUMAP_scDEED"]
+          - values: ["--what","visualize_normalize","--flavour","BHtSNE_scDEED"]
+          - values: ["--what","visualize_normalize","--flavour","densMAP_scDEED"]
+          - values: ["--what","visualize_normalize","--flavour","graphFA_scDEED"]
+          - values: ["--what","visualize_normalize","--flavour","scanpyUMAP_scDEED"]
+          - values: ["--what","visualize_normalize","--flavour","denSNE"]
+          - values: ["--what","visualize_normalize","--flavour","PHATE"]
+    inputs:
+      - entries:
+          - integrate_normalize.ad
+    outputs:
+      - id: visualize_normalize.csv.gz
+        path: "{dataset}_visualize_normalize.csv.gz"
+
+  ## ========= INTEGRATION (RAW BRANCH) =======================================        
+  - id: integrate_count
+    modules:
+      - id: integrate_count-r
+        name: "integration methods compatible with raw counts input"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","integrate_count","--flavour","LIGER"]
+          - values: ["--what","integrate_count","--flavour","scVI"]
+          - values: ["--what","integrate_count","--flavour","LIGER_integrateRigor"]
+          - values: ["--what","integrate_count","--flavour","scVI_integrateRigor"]
+    inputs:
+      - entries: 
+        - simulate.ad
+    outputs:
+      - id: integrate_count.ad
+        path: "{dataset}_integrate_count.ad"
+
+  ## ========= VISUALIZATION (RAW BRANCH) =======================================
+  - id: visualize_count
+    modules:
+      - id: visualize_count-r
+        name: "2D visualization methods implemented in R"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","visualize_count","--flavour","SeuratUMAP"]
+          - values: ["--what","visualize_count","--flavour","BHtSNE"]
+          - values: ["--what","visualize_count","--flavour","FItSNE"]
+          - values: ["--what","visualize_count","--flavour","scanpyUMAP"]
+          - values: ["--what","visualize_count","--flavour","densMAP"]
+          - values: ["--what","visualize_count","--flavour","graphFA"]
+          - values: ["--what","visualize_count","--flavour","SeuratUMAP_scDEED"]
+          - values: ["--what","visualize_count","--flavour","BHtSNE_scDEED"]
+          - values: ["--what","visualize_count","--flavour","densMAP_scDEED"]
+          - values: ["--what","visualize_count","--flavour","graphFA_scDEED"]
+          - values: ["--what","visualize_count","--flavour","scanpyUMAP_scDEED"]
+          #- values: ["--what","visualize_count","--flavour","denSNE"]
+          #- values: ["--what","visualize_count","--flavour","PHATE"]
+    inputs:
+      - entries:
+          - integrate_count.ad
+    outputs:
+      - id: visualize_count.csv.gz
+        path: "{dataset}_visualize_count.csv.gz"
+
+## ========= METRICS (RAW BRANCH) =============================================
+  - id: metrics_count
+    modules:
+      - id: metrics_count-r
+        name: "given embeddings, compute some metrics (in R)"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","metric_count","--flavour","celltype_shape"]
+          - values: ["--what","metric_count","--flavour","batch_mixture"]
+          - values: ["--what","metric_count","--flavour","zero_proportion"]
+          - values: ["--what","metric_count","--flavour","library_size"]
+          - values: ["--what","metric_count","--flavour","distance_preservation"]
+          - values: ["--what","metric_count","--flavour","variance_preservation"]
+          - values: ["--what","metric_count","--flavour","variance_samplesize"]
+          - values: ["--what","metric_count","--flavour","celltype_separation"]
+    inputs:
+      - entries:
+          - visualize_count.csv.gz
+          - integrate_count.ad
+          - simulate_mean.csv
+          - simulate_var.csv
+    outputs:
+      - id: metric_count.json
+        path: "{dataset}_metric_count.json"
+
+## ========= METRICS (NORM BRANCH) ============================================
+  - id: metrics_normalize
+    modules:
+      - id: metrics_normalize-r
+        name: "given embeddings, compute some metrics (in R)"
+        software_environment: r-451-bioc-321-apptainer
+        repository:
+          url: https://github.com/zhiqianZ/vizbench-r
+          commit: 51a7040
+        parameters:
+          - values: ["--what","metric_normalize","--flavour","celltype_shape"]
+          - values: ["--what","metric_normalize","--flavour","batch_mixture"]
+          - values: ["--what","metric_normalize","--flavour","zero_proportion"]
+          - values: ["--what","metric_normalize","--flavour","library_size"]
+          - values: ["--what","metric_normalize","--flavour","distance_preservation"]
+          - values: ["--what","metric_normalize","--flavour","variance_preservation"]
+          - values: ["--what","metric_normalize","--flavour","variance_samplesize"]
+          - values: ["--what","metric_normalize","--flavour","celltype_separation"]
+    inputs:
+      - entries:
+          - visualize_normalize.csv.gz
+          - integrate_normalize.ad
+          - simulate_mean.csv
+          - simulate_var.csv
+    outputs:
+      - id: metric_normalize.json
+        path: "{dataset}_metric_normalize.json"
